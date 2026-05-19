@@ -4,7 +4,7 @@ const { pool } = require('../models/db');
 
 async function register(req, res) {
   try {
-    const { phone, email, password } = req.body;
+    const { phone, email, password, vpnName } = req.body;
 
     if (!password || password.length < 6) {
       return res.status(400).json({ error: 'Пароль должен содержать минимум 6 символов' });
@@ -26,8 +26,8 @@ async function register(req, res) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      'INSERT INTO users (phone, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
-      [phone || null, email || null, passwordHash]
+      'INSERT INTO users (phone, email, password_hash, vpn_name) VALUES ($1, $2, $3, $4) RETURNING id',
+      [phone || null, email || null, passwordHash, vpnName || null]
     );
 
     const userId = result.rows[0].id;
@@ -78,7 +78,7 @@ async function login(req, res) {
 async function getMe(req, res) {
   try {
     const result = await pool.query(
-      'SELECT id, phone, email, created_at FROM users WHERE id = $1',
+      'SELECT id, phone, email, vpn_name, created_at FROM users WHERE id = $1',
       [req.userId]
     );
 
@@ -111,4 +111,18 @@ async function seedTestUser(req, res) {
   }
 }
 
-module.exports = { register, login, getMe, seedTestUser };
+async function updateVpnName(req, res) {
+  try {
+    const { vpnName } = req.body;
+    if (!vpnName || !vpnName.trim()) {
+      return res.status(400).json({ error: 'Имя VPN не может быть пустым' });
+    }
+    await pool.query('UPDATE users SET vpn_name = $1 WHERE id = $2', [vpnName.trim(), req.userId]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('UpdateVpnName error:', err);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
+module.exports = { register, login, getMe, seedTestUser, updateVpnName };

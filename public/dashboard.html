@@ -33,7 +33,23 @@
     <!-- ACTIVE SUBSCRIPTION -->
     <div id="subSection" style="display:none;">
       <div class="card" style="margin-bottom: 20px;">
-        <div class="card-title">📡 Статус подписки</div>
+        <div class="card-title" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <span>📡 Статус подписки</span>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:0.78rem; color:var(--text-secondary);">Имя VPN:</span>
+            <span id="vpnNameDisplay" style="font-size:0.88rem; font-weight:600; color:var(--neon-cyan);">—</span>
+            <button id="editVpnNameBtn" class="btn btn-ghost" style="padding:4px 10px; min-height:28px; font-size:0.76rem;">✏️</button>
+          </div>
+        </div>
+
+        <div id="vpnNameEditBox" style="display:none; margin-bottom:14px; display:none;">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input class="form-input" id="vpnNameInput" type="text" placeholder="Введите имя VPN" maxlength="50" style="flex:1; min-width:140px; min-height:36px; font-size:0.88rem;" />
+            <button id="saveVpnNameBtn" class="btn btn-primary" style="min-height:36px; padding:6px 14px; font-size:0.82rem;">Сохранить</button>
+            <button id="cancelVpnNameBtn" class="btn btn-outline" style="min-height:36px; padding:6px 12px; font-size:0.82rem;">✕</button>
+          </div>
+          <div id="vpnNameAlert" class="alert" style="margin-top:8px; margin-bottom:0;"></div>
+        </div>
 
         <div class="subscription-status">
           <div class="status-dot active"></div>
@@ -41,10 +57,14 @@
           <span class="status-value">Истекает: <strong id="expiresAt">—</strong></span>
         </div>
 
-        <div style="display:flex; gap: 24px; padding: 10px 0;">
+        <div style="display:flex; gap: 24px; padding: 10px 0; flex-wrap:wrap; align-items:center;">
           <div>
-            <div style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:4px; font-weight:500;">Осталось</div>
-            <div style="font-size:1.3rem; font-weight:700; color:#059669;" id="daysLeft">—</div>
+            <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px; font-weight:500;">Осталось</div>
+            <div style="font-size:1.2rem; font-weight:700; color:var(--success);" id="daysLeft">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px; font-weight:500;">До истечения</div>
+            <div style="font-size:1.2rem; font-weight:700; font-variant-numeric: tabular-nums; background: var(--holo); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;" id="countdown">—</div>
           </div>
         </div>
       </div>
@@ -67,7 +87,7 @@
             <div class="step-num">1</div>
             <div class="step-text">
               Скачайте приложение <strong>Streisand</strong> для iOS или
-              <strong>v2rayNG</strong> для Android
+              <strong>v2RayTun</strong> для Android
             </div>
           </li>
           <li>
@@ -96,12 +116,12 @@
           <a href="https://apps.apple.com/app/streisand/id6450534064" target="_blank" class="btn btn-ghost">
             📱 Streisand (iOS)
           </a>
-          <a href="https://play.google.com/store/apps/details?id=com.v2ray.ang" target="_blank" class="btn btn-ghost">
-            🤖 v2rayNG (Android)
+          <a href="https://play.google.com/store/apps/details?id=com.v2raytun.android" target="_blank" class="btn btn-ghost">
+            🤖 v2RayTun (Android)
           </a>
-          <a href="https://github.com/2dust/v2rayN/releases" target="_blank" class="btn btn-ghost">
-            🖥 v2rayN (Windows)
-          </a>
+          <button class="btn btn-ghost" disabled style="opacity:0.35; cursor:not-allowed;">
+            🖥 v2rayN (Windows) — скоро
+          </button>
         </div>
       </div>
     </div>
@@ -131,7 +151,7 @@
           </button>
           <button class="plan-btn" data-days="14">
             <div class="plan-days">14 дней</div>
-            <div class="plan-price">400 ₽</div>
+            <div class="plan-price">300 ₽</div>
           </button>
           <button class="plan-btn selected" data-days="30">
             <div class="plan-days">30 дней</div>

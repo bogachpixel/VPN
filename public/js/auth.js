@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = registerForm.querySelector('button[type="submit"]');
       const phone = registerForm.querySelector('#phone')?.value.trim();
       const email = registerForm.querySelector('#email')?.value.trim();
+      const vpnName = registerForm.querySelector('#vpnName')?.value.trim();
       const password = registerForm.querySelector('#password').value;
       const confirm = registerForm.querySelector('#confirm').value;
 
@@ -99,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = { password };
         if (usePhone) body.phone = phone;
         else body.email = email;
+        if (vpnName) body.vpnName = vpnName;
 
         const data = await apiRequest('POST', '/auth/register', body);
         setToken(data.token);

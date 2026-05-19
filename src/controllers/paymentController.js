@@ -3,7 +3,7 @@ const { generatePaymentUrl } = require('../services/freekassaService');
 
 const PLANS = {
   7:  { price: 200, label: '7 дней' },
-  14: { price: 400, label: '14 дней' },
+  14: { price: 300, label: '14 дней' },
   30: { price: 500, label: '30 дней' }
 };
 

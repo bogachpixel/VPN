@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getMe, seedTestUser } = require('../controllers/authController');
+const { register, login, getMe, seedTestUser, updateVpnName } = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);
 router.get('/me', authMiddleware, getMe);
+router.post('/vpn-name', authMiddleware, updateVpnName);
 router.get('/seed-test', seedTestUser);
 
 module.exports = router;

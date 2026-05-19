@@ -19,12 +19,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  let currentVpnName = '';
+
   async function loadUser() {
     try {
       const user = await apiRequest('GET', '/auth/me');
       if (userLabel) {
         userLabel.textContent = user.phone || user.email || 'Пользователь';
       }
+      currentVpnName = user.vpn_name || '';
+      const vpnNameDisplay = document.getElementById('vpnNameDisplay');
+      if (vpnNameDisplay) vpnNameDisplay.textContent = currentVpnName || 'Не задано';
     } catch {}
   }
 
@@ -50,6 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         if (daysLeftEl) daysLeftEl.textContent = `${daysLeft} дн.`;
+
+        startCountdown(expiresDate);
 
         if (qrImg && sub.qrCode) {
           qrImg.src = sub.qrCode;
@@ -112,6 +119,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  let countdownInterval = null;
+
+  function startCountdown(expiresDate) {
+    const el = document.getElementById('countdown');
+    if (!el) return;
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    function update() {
+      const diff = expiresDate - new Date();
+      if (diff <= 0) {
+        el.textContent = 'Истекло';
+        clearInterval(countdownInterval);
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      el.textContent = `${d}д ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    update();
+    countdownInterval = setInterval(update, 1000);
+  }
+
+  function setupVpnNameEdit() {
+    const editBtn = document.getElementById('editVpnNameBtn');
+    const editBox = document.getElementById('vpnNameEditBox');
+    const input = document.getElementById('vpnNameInput');
+    const saveBtn = document.getElementById('saveVpnNameBtn');
+    const cancelBtn = document.getElementById('cancelVpnNameBtn');
+    const display = document.getElementById('vpnNameDisplay');
+    const alert = document.getElementById('vpnNameAlert');
+    if (!editBtn) return;
+
+    editBtn.addEventListener('click', () => {
+      if (input) input.value = currentVpnName;
+      editBox.style.display = 'block';
+      if (input) input.focus();
+    });
+
+    if (cancelBtn) cancelBtn.addEventListener('click', () => { editBox.style.display = 'none'; });
+
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+      const val = input.value.trim();
+      if (!val) { showAlert(alert, 'Введите имя VPN', 'error'); return; }
+      saveBtn.disabled = true;
+      saveBtn.textContent = '...';
+      try {
+        await apiRequest('POST', '/auth/vpn-name', { vpnName: val });
+        currentVpnName = val;
+        if (display) display.textContent = val;
+        editBox.style.display = 'none';
+        hideAlert(alert);
+      } catch (err) {
+        showAlert(alert, err.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Сохранить';
+      }
+    });
+  }
+
   function setupCopyBtn() {
     const copyBtn = document.getElementById('copyBtn');
     if (!copyBtn) return;
@@ -136,6 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([loadUser(), loadSubscription()]);
   setupPlanButtons();
   setupCopyBtn();
+  setupVpnNameEdit();
   setupTestBtn();
 
   function setupTestBtn() {

@@ -14,8 +14,13 @@ async function initDB() {
         phone VARCHAR(20),
         email VARCHAR(255),
         password_hash VARCHAR(255) NOT NULL,
+        vpn_name VARCHAR(100),
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS vpn_name VARCHAR(100);
     `);
 
     await client.query(`
