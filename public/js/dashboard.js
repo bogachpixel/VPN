@@ -84,16 +84,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let paymentPollTimer = null;
 
-  function openPaymentModal(widgetUrl) {
+  function openPaymentModal(widgetUrl, orderId) {
     const modal  = document.getElementById('paymentModal');
     const frame  = document.getElementById('paymentFrame');
     const status = document.getElementById('paymentStatus');
     if (!modal || !frame) return;
     frame.src = widgetUrl;
+    if (frame) frame.style.display = '';
     if (status) status.style.display = 'none';
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    startPaymentPoll();
+    startPaymentPoll(orderId);
   }
 
   function closePaymentModal() {
@@ -105,12 +106,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
   }
 
-  function startPaymentPoll() {
+  function startPaymentPoll(orderId) {
     if (paymentPollTimer) clearInterval(paymentPollTimer);
     paymentPollTimer = setInterval(async () => {
       try {
-        const data = await apiRequest('GET', '/subscription/active');
-        if (data.hasSubscription && !data.subscription.isExpired) {
+        const data = await apiRequest('GET', `/payment/status/${orderId}`);
+        if (data.status === 'paid') {
           clearInterval(paymentPollTimer); paymentPollTimer = null;
           const status = document.getElementById('paymentStatus');
           const frame  = document.getElementById('paymentFrame');
@@ -131,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await apiRequest('POST', '/payment/create', { planDays });
       if (btn) { btn.disabled = false; btn.textContent = 'Перейти к оплате →'; }
       if (data.widgetUrl) {
-        openPaymentModal(data.widgetUrl);
+        openPaymentModal(data.widgetUrl, data.orderId);
       } else {
         window.location.href = data.paymentUrl;
       }

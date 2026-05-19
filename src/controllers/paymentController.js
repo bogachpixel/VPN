@@ -34,7 +34,7 @@ async function createPayment(req, res) {
 
     const widgetApiKey = process.env.FREEKASSA_API_KEY || '';
     const merchantId  = process.env.FREEKASSA_MERCHANT_ID;
-    const widgetUrl = `https://widgets.freekassa.net?type=payment-window&lang=ru&theme=dark&api_key=${widgetApiKey}&shopID=${merchantId}&oa=${plan.price}&o=${orderId}`;
+    const widgetUrl = `https://widgets.freekassa.net?type=payment-window&lang=ru&theme=dark&api_key=${widgetApiKey}&shopID=${merchantId}&default_amount=${plan.price}&o=${orderId}`;
 
     return res.json({ paymentUrl, widgetUrl, orderId });
   } catch (err) {
@@ -43,4 +43,18 @@ async function createPayment(req, res) {
   }
 }
 
-module.exports = { createPayment, PLANS };
+async function getPaymentStatus(req, res) {
+  try {
+    const { orderId } = req.params;
+    const result = await pool.query(
+      'SELECT status FROM payments WHERE order_id = $1 AND user_id = $2',
+      [orderId, req.userId]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    return res.json({ status: result.rows[0].status });
+  } catch (err) {
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
+module.exports = { createPayment, getPaymentStatus, PLANS };
