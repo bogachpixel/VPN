@@ -136,6 +136,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([loadUser(), loadSubscription()]);
   setupPlanButtons();
   setupCopyBtn();
+  setupTestBtn();
+
+  function setupTestBtn() {
+    const testBtn = document.getElementById('testBtn');
+    const testAlert = document.getElementById('testAlert');
+    if (!testBtn) return;
+
+    testBtn.addEventListener('click', async () => {
+      hideAlert(testAlert);
+      testBtn.disabled = true;
+      testBtn.textContent = 'Активация...';
+
+      try {
+        await apiRequest('POST', '/subscription/test-activate', {});
+        showAlert(testAlert, '✅ Тестовая подписка активирована! Обновляем страницу...', 'success');
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        showAlert(testAlert, err.message, 'error');
+        testBtn.disabled = false;
+        testBtn.textContent = 'Активировать тест';
+      }
+    });
+  }
 
   if (autoBuy && isLoggedIn()) {
     setTimeout(() => buyPlan(parseInt(autoBuy)), 500);

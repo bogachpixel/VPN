@@ -11,7 +11,7 @@
   <nav class="navbar">
     <a href="/" class="navbar-logo">
       <div class="logo-icon">🛡</div>
-      TouchVPN
+      <span class="logo-text">TouchVPN</span>
     </a>
     <div class="navbar-links">
       <span id="userLabel" style="color: var(--text-secondary); font-size: 0.9rem;"></span>
@@ -26,7 +26,7 @@
       <p style="color:var(--text-secondary);">Управление подпиской и настройками VPN</p>
     </div>
 
-    <div id="loading" style="text-align:center; padding: 48px; color: var(--text-secondary);">
+    <div id="loading" style="text-align:center; padding: 48px; color: var(--text-secondary); font-size: 0.95rem;">
       Загрузка...
     </div>
 
@@ -41,10 +41,10 @@
           <span class="status-value">Истекает: <strong id="expiresAt">—</strong></span>
         </div>
 
-        <div style="display:flex; gap: 24px; padding: 12px 0;">
+        <div style="display:flex; gap: 24px; padding: 10px 0;">
           <div>
-            <div style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:4px;">Осталось</div>
-            <div style="font-size:1.3rem; font-weight:700; color:var(--success);" id="daysLeft">—</div>
+            <div style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:4px; font-weight:500;">Осталось</div>
+            <div style="font-size:1.3rem; font-weight:700; color:#059669;" id="daysLeft">—</div>
           </div>
         </div>
       </div>
@@ -147,6 +147,19 @@
             Оплата через Freekassa<br>Карты, СБП, QIWI
           </div>
         </div>
+
+        <!-- TEST SECTION -->
+        <div class="test-section">
+          <div class="test-section-info">
+            <strong>🧪 Тестовый режим</strong>
+            <span>Активировать подписку на 1 день без оплаты</span>
+          </div>
+          <button id="testBtn" class="btn btn-ghost" style="min-height:42px; padding: 9px 18px; font-size:0.86rem;">
+            Активировать тест
+          </button>
+        </div>
+        <div id="testAlert" class="alert" style="margin-top:10px; margin-bottom:0;"></div>
+
       </div>
     </div>
 

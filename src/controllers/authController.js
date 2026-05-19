@@ -93,4 +93,22 @@ async function getMe(req, res) {
   }
 }
 
-module.exports = { register, login, getMe };
+async function seedTestUser(req, res) {
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', ['test@test.com']);
+    if (existing.rows.length > 0) {
+      return res.json({ message: 'Тестовый пользователь уже существует', userId: existing.rows[0].id });
+    }
+    const passwordHash = await bcrypt.hash('Test1234', 10);
+    const result = await pool.query(
+      'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id',
+      ['test@test.com', passwordHash]
+    );
+    return res.json({ message: 'Тестовый пользователь создан', userId: result.rows[0].id });
+  } catch (err) {
+    console.error('SeedTestUser error:', err);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
+module.exports = { register, login, getMe, seedTestUser };
