@@ -6,7 +6,7 @@
   style.textContent = `
     #sc-overlay {
       position: fixed; inset: 0; z-index: 99999;
-      background: rgba(15, 12, 5, 0.55);
+      background: rgba(4, 4, 14, 0.75);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       display: flex; align-items: center; justify-content: center;
@@ -15,54 +15,54 @@
     #sc-overlay.sc-hide { opacity: 0; pointer-events: none; }
 
     #sc-card {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(12, 10, 28, 0.96);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.95);
-      border-radius: 22px;
-      padding: 36px 44px;
+      border: 1px solid rgba(176, 96, 255, 0.3);
+      border-radius: 20px;
+      padding: 32px 40px;
       text-align: center;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.18);
-      min-width: 280px;
-      max-width: 340px;
+      box-shadow: 0 0 40px rgba(176,96,255,0.2), 0 0 80px rgba(0,229,255,0.08), 0 24px 60px rgba(0,0,0,0.6);
+      min-width: 270px;
+      max-width: 320px;
       transform: scale(1);
       transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
     }
 
     #sc-logo {
-      width: 56px; height: 56px;
+      width: 52px; height: 52px;
       background: linear-gradient(135deg, #F6821F 0%, #FBAD41 100%);
-      border-radius: 16px;
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 18px;
-      box-shadow: 0 6px 20px rgba(246,130,31,0.4);
-      font-size: 1.8rem;
+      margin: 0 auto 16px;
+      box-shadow: 0 6px 20px rgba(246,130,31,0.45);
+      font-size: 1.7rem;
     }
 
     #sc-brand {
       font-family: 'Inter', -apple-system, sans-serif;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      color: #6b7280;
-      letter-spacing: 0.5px;
+      color: rgba(176,96,255,0.7);
+      letter-spacing: 1px;
       text-transform: uppercase;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     #sc-status {
       font-family: 'Inter', -apple-system, sans-serif;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 20px;
-      min-height: 28px;
-      letter-spacing: -0.3px;
+      color: #f0eeff;
+      margin-bottom: 18px;
+      min-height: 26px;
+      letter-spacing: -0.2px;
     }
 
     #sc-bar-wrap {
       width: 100%;
-      height: 4px;
-      background: rgba(0,0,0,0.07);
+      height: 3px;
+      background: rgba(255,255,255,0.07);
       border-radius: 99px;
       overflow: hidden;
     }
@@ -70,20 +70,21 @@
     #sc-bar {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #F6821F, #FBAD41);
+      background: linear-gradient(90deg, #00e5ff, #b060ff, #ff4dc4);
       border-radius: 99px;
       transition: width 1.4s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 0 8px rgba(176,96,255,0.6);
     }
 
     #sc-check {
       display: none;
-      width: 56px; height: 56px;
-      background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #00d68f 0%, #00e5ff 100%);
       border-radius: 50%;
       align-items: center; justify-content: center;
-      margin: 0 auto 18px;
-      box-shadow: 0 6px 20px rgba(5,150,105,0.4);
-      font-size: 1.6rem;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 20px rgba(0,214,143,0.5), 0 6px 20px rgba(0,229,255,0.3);
+      font-size: 1.5rem;
       animation: sc-pop 0.4s cubic-bezier(.34,1.56,.64,1);
     }
 
@@ -94,6 +95,7 @@
 
     #sc-sub {
       font-family: 'Inter', -apple-system, sans-serif;
+      color: rgba(176,96,255,0.5) !important;
       font-size: 0.82rem;
       color: #9ca3af;
       margin-top: 10px;
