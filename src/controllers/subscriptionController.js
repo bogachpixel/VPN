@@ -2,13 +2,23 @@ const { pool } = require('../models/db');
 const QRCode = require('qrcode');
 const { createMarzbanUser } = require('../services/marzbanService');
 
+function injectVpnName(link, vpnName) {
+  if (!link || !vpnName) return link;
+  try {
+    const hashIdx = link.indexOf('#');
+    const base = hashIdx >= 0 ? link.substring(0, hashIdx) : link;
+    return base + '#' + encodeURIComponent(vpnName);
+  } catch { return link; }
+}
+
 async function getActiveSubscription(req, res) {
   try {
     const userId = req.userId;
 
     const result = await pool.query(
-      `SELECT s.*
+      `SELECT s.*, u.vpn_name
        FROM subscriptions s
+       JOIN users u ON u.id = s.user_id
        WHERE s.user_id = $1 AND s.status = 'active'
        ORDER BY s.expires_at DESC
        LIMIT 1`,
@@ -20,11 +30,14 @@ async function getActiveSubscription(req, res) {
     }
 
     const sub = result.rows[0];
+    const vpnName = sub.vpn_name;
     const isExpired = new Date(sub.expires_at) < new Date();
 
+    const displayLink = injectVpnName(sub.marzban_link, vpnName);
+
     let qrCode = null;
-    if (sub.marzban_link) {
-      qrCode = await QRCode.toDataURL(sub.marzban_link, {
+    if (displayLink) {
+      qrCode = await QRCode.toDataURL(displayLink, {
         width: 300,
         margin: 2,
         color: { dark: '#1a1a1a', light: '#ffffff' }
@@ -38,7 +51,7 @@ async function getActiveSubscription(req, res) {
         planDays: sub.plan_days,
         startedAt: sub.started_at,
         expiresAt: sub.expires_at,
-        marzbanLink: sub.marzban_link,
+        marzbanLink: displayLink,
         status: sub.status,
         qrCode,
         isExpired
