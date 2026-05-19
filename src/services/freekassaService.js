@@ -5,9 +5,9 @@ const CURRENCY = 'RUB';
 function generatePaymentUrl(orderId, amount) {
   const merchantId = process.env.FREEKASSA_MERCHANT_ID;
   const secret1   = process.env.FREEKASSA_SECRET1;
-  const siteUrl   = process.env.SITE_URL || 'https://vpn.touchme.tech';
 
-  const sign = md5(`${merchantId}:${amount}:${secret1}:${CURRENCY}:${orderId}`);
+  // Old stable API — sign WITHOUT currency
+  const sign = md5(`${merchantId}:${amount}:${secret1}:${orderId}`);
 
   const params = new URLSearchParams({
     m:        merchantId,
@@ -16,11 +16,9 @@ function generatePaymentUrl(orderId, amount) {
     o:        orderId,
     s:        sign,
     lang:     'ru',
-    success_url: `${siteUrl}/payment/success`,
-    failure_url: `${siteUrl}/payment/fail`,
   });
 
-  return `https://pay.freekassa.ru/?${params.toString()}`;
+  return `https://www.free-kassa.ru/merchant/cash.php?${params.toString()}`;
 }
 
 function verifyWebhook(params) {
