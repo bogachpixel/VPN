@@ -4,29 +4,39 @@ const CURRENCY = 'RUB';
 
 function generatePaymentUrl(orderId, amount) {
   const merchantId = process.env.FREEKASSA_MERCHANT_ID;
-  const secret1 = process.env.FREEKASSA_SECRET1;
-  const siteUrl = process.env.SITE_URL || 'https://vpn.touchme.tech';
+  const secret1   = process.env.FREEKASSA_SECRET1;
+  const siteUrl   = process.env.SITE_URL || 'https://vpn.touchme.tech';
 
   const sign = md5(`${merchantId}:${amount}:${secret1}:${CURRENCY}:${orderId}`);
 
   const params = new URLSearchParams({
-    m: merchantId,
-    oa: amount,
+    m:        merchantId,
+    oa:       amount,
     currency: CURRENCY,
-    o: orderId,
-    s: sign,
-    lang: 'ru',
-    us_redirect: `${siteUrl}/payment/success`,
-    us_fail_redirect: `${siteUrl}/payment/fail`
+    o:        orderId,
+    s:        sign,
+    lang:     'ru',
+    success_url: `${siteUrl}/payment/success`,
+    failure_url: `${siteUrl}/payment/fail`,
   });
 
   return `https://pay.freekassa.ru/?${params.toString()}`;
 }
 
-function verifyWebhook(merchantId, amount, orderId, sign) {
+function verifyWebhook(params) {
+  const { MERCHANT_ID, AMOUNT, MERCHANT_ORDER_ID, SIGN, CUR_ID } = params;
   const secret2 = process.env.FREEKASSA_SECRET2;
-  const expectedSign = md5(`${merchantId}:${amount}:${secret2}:${orderId}`);
-  return sign === expectedSign;
+
+  // Try both: with and without currency (API v1 vs v2)
+  const sign1 = md5(`${MERCHANT_ID}:${AMOUNT}:${secret2}:${MERCHANT_ORDER_ID}`);
+  const sign2 = md5(`${MERCHANT_ID}:${AMOUNT}:${secret2}:${CURRENCY}:${MERCHANT_ORDER_ID}`);
+
+  const ok = SIGN === sign1 || SIGN === sign2;
+  if (!ok) {
+    console.error(`[Freekassa] Sign mismatch. Got: ${SIGN} | Expected v1: ${sign1} | v2: ${sign2}`);
+    console.error(`[Freekassa] Params: MERCHANT_ID=${MERCHANT_ID} AMOUNT=${AMOUNT} ORDER=${MERCHANT_ORDER_ID}`);
+  }
+  return ok;
 }
 
 module.exports = { generatePaymentUrl, verifyWebhook };

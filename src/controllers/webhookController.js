@@ -5,10 +5,17 @@ const QRCode = require('qrcode');
 
 async function handleFreekassaWebhook(req, res) {
   try {
-    const { MERCHANT_ID, AMOUNT, intid, MERCHANT_ORDER_ID, SIGN } = req.body;
+    const params = Object.keys(req.body).length ? req.body : req.query;
+    console.log('[Freekassa webhook] incoming:', JSON.stringify(params));
 
-    if (!verifyWebhook(MERCHANT_ID, AMOUNT, MERCHANT_ORDER_ID, SIGN)) {
-      console.error('Webhook: invalid signature for order', MERCHANT_ORDER_ID);
+    const { MERCHANT_ID, AMOUNT, intid, MERCHANT_ORDER_ID, SIGN } = params;
+
+    if (!MERCHANT_ID || !AMOUNT || !MERCHANT_ORDER_ID || !SIGN) {
+      console.error('[Freekassa webhook] Missing required params');
+      return res.status(400).send('NO');
+    }
+
+    if (!verifyWebhook(params)) {
       return res.status(400).send('NO');
     }
 
