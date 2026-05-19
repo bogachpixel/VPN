@@ -185,6 +185,15 @@
 
   </div>
 
+  <!-- PAYMENT MODAL -->
+  <div id="paymentModal" class="payment-backdrop" style="display:none;">
+    <div class="payment-modal-box">
+      <button id="closePaymentModal" class="payment-modal-close">✕ Закрыть</button>
+      <div id="paymentStatus" class="payment-modal-status" style="display:none;"></div>
+      <iframe id="paymentFrame" src="" frameborder="0" class="payment-modal-frame"></iframe>
+    </div>
+  </div>
+
   <script src="/js/api.js"></script>
   <script src="/js/security-check.js"></script>
   <script src="/js/dashboard.js"></script>

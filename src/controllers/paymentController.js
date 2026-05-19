@@ -32,7 +32,11 @@ async function createPayment(req, res) {
 
     const paymentUrl = generatePaymentUrl(orderId, plan.price);
 
-    return res.json({ paymentUrl, orderId });
+    const widgetApiKey = process.env.FREEKASSA_API_KEY || '';
+    const merchantId  = process.env.FREEKASSA_MERCHANT_ID;
+    const widgetUrl = `https://widgets.freekassa.net?type=payment-window&lang=ru&theme=dark&api_key=${widgetApiKey}&shopID=${merchantId}&oa=${plan.price}&o=${orderId}`;
+
+    return res.json({ paymentUrl, widgetUrl, orderId });
   } catch (err) {
     console.error('CreatePayment error:', err);
     return res.status(500).json({ error: 'Ошибка сервера' });

@@ -82,21 +82,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  let paymentPollTimer = null;
+
+  function openPaymentModal(widgetUrl) {
+    const modal  = document.getElementById('paymentModal');
+    const frame  = document.getElementById('paymentFrame');
+    const status = document.getElementById('paymentStatus');
+    if (!modal || !frame) return;
+    frame.src = widgetUrl;
+    if (status) status.style.display = 'none';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    startPaymentPoll();
+  }
+
+  function closePaymentModal() {
+    const modal = document.getElementById('paymentModal');
+    const frame = document.getElementById('paymentFrame');
+    if (modal) modal.style.display = 'none';
+    if (frame) frame.src = '';
+    document.body.style.overflow = '';
+    if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
+  }
+
+  function startPaymentPoll() {
+    if (paymentPollTimer) clearInterval(paymentPollTimer);
+    paymentPollTimer = setInterval(async () => {
+      try {
+        const data = await apiRequest('GET', '/subscription/active');
+        if (data.hasSubscription && !data.subscription.isExpired) {
+          clearInterval(paymentPollTimer); paymentPollTimer = null;
+          const status = document.getElementById('paymentStatus');
+          const frame  = document.getElementById('paymentFrame');
+          if (status) { status.textContent = '✅ Оплата прошла! Обновляем...'; status.style.display = 'block'; }
+          if (frame)  frame.style.display = 'none';
+          setTimeout(() => { closePaymentModal(); window.location.reload(); }, 2000);
+        }
+      } catch (e) {}
+    }, 3000);
+  }
+
   async function buyPlan(planDays) {
     if (!buyAlert) return;
     hideAlert(buyAlert);
-
     const btn = document.getElementById('buyBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Создание платежа...'; }
-
     try {
       const data = await apiRequest('POST', '/payment/create', { planDays });
-      window.location.href = data.paymentUrl;
+      if (btn) { btn.disabled = false; btn.textContent = 'Перейти к оплате →'; }
+      if (data.widgetUrl) {
+        openPaymentModal(data.widgetUrl);
+      } else {
+        window.location.href = data.paymentUrl;
+      }
     } catch (err) {
       showAlert(buyAlert, err.message, 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Перейти к оплате'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Перейти к оплате →'; }
     }
   }
+
+  const closeModalBtn = document.getElementById('closePaymentModal');
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closePaymentModal);
+  const paymentBackdrop = document.getElementById('paymentModal');
+  if (paymentBackdrop) paymentBackdrop.addEventListener('click', (e) => {
+    if (e.target === paymentBackdrop) closePaymentModal();
+  });
 
   let selectedPlan = 30;
 
@@ -231,7 +281,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  if (autoBuy && isLoggedIn()) {
-    setTimeout(() => buyPlan(parseInt(autoBuy)), 500);
-  }
 });
