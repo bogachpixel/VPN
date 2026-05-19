@@ -77,6 +77,9 @@ async function handleFreekassaWebhook(req, res) {
 
       const marzbanUser = await getMarzbanUser(marzbanUsername);
       marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      if (!marzbanLink || marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {
+        throw new Error('Marzban returned invalid link');
+      }
 
       await pool.query(
         'UPDATE subscriptions SET marzban_link = $1 WHERE id = $2',
@@ -88,6 +91,9 @@ async function handleFreekassaWebhook(req, res) {
 
       const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
       marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      if (!marzbanLink || marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {
+        throw new Error('Marzban returned invalid link');
+      }
 
       await pool.query(
         `UPDATE subscriptions

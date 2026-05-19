@@ -98,9 +98,10 @@ async function testActivate(req, res) {
     try {
       const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
       marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      if (!marzbanLink) throw new Error('Marzban returned empty link');
     } catch (err) {
-      console.log('Marzban unavailable, using placeholder for test:', err.message);
-      marzbanLink = `vless://00000000-0000-0000-0000-000000000000@142.93.107.127:443?type=tcp&security=tls#TouchVPN-Test-${userId}`;
+      console.error('Marzban unavailable for test activation:', err.message);
+      return res.status(503).json({ error: 'VPN сервер недоступен. Попробуйте позже.' });
     }
 
     await pool.query(
@@ -123,4 +124,66 @@ async function testActivate(req, res) {
   }
 }
 
-module.exports = { getActiveSubscription, getPaymentHistory, testActivate };
+async function fixBrokenLink(req, res) {
+  try {
+    const userId = req.userId;
+
+    const result = await pool.query(
+      `SELECT * FROM subscriptions
+       WHERE user_id = $1 AND status = 'active'
+       ORDER BY expires_at DESC LIMIT 1`,
+      [userId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Активная подписка не найдена' });
+    }
+
+    const sub = result.rows[0];
+    const link = sub.marzban_link;
+
+    // Only allow if link is broken (placeholder)
+    if (!link || !link.includes('00000000-0000-0000-0000-000000000000')) {
+      return res.status(400).json({ error: 'Ссылка не сломана, исправление не требуется' });
+    }
+
+    const expireTimestamp = Math.floor(new Date(sub.expires_at).getTime() / 1000);
+    const { createMarzbanUser, getMarzbanUser } = require('../services/marzbanService');
+
+    let marzbanUsername = sub.marzban_username;
+    let marzbanLink = '';
+
+    if (marzbanUsername) {
+      // Try to get existing user
+      try {
+        const marzbanUser = await getMarzbanUser(marzbanUsername);
+        marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      } catch (e) {
+        // Create new user
+        marzbanUsername = `vpn_${userId}_${Date.now()}`;
+        const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
+        marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      }
+    } else {
+      marzbanUsername = `vpn_${userId}_${Date.now()}`;
+      const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
+      marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+    }
+
+    if (!marzbanLink || marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {
+      return res.status(503).json({ error: 'VPN сервер недоступен. Попробуйте позже.' });
+    }
+
+    await pool.query(
+      'UPDATE subscriptions SET marzban_username = $1, marzban_link = $2 WHERE id = $3',
+      [marzbanUsername, marzbanLink, sub.id]
+    );
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('FixBrokenLink error:', err);
+    return res.status(500).json({ error: 'Не удалось исправить ссылку. Попробуйте позже.' });
+  }
+}
+
+module.exports = { getActiveSubscription, getPaymentHistory, testActivate, fixBrokenLink };

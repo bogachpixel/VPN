@@ -74,6 +74,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (linkSpan && sub.marzbanLink) {
           linkSpan.textContent = sub.marzbanLink;
+          const fixBox = document.getElementById('fixLinkBox');
+          if (fixBox && sub.marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {
+            fixBox.style.display = 'block';
+          }
         }
 
         if (subSection) subSection.style.display = '';
@@ -280,6 +284,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  function setupFixLinkBtn() {
+    const btn = document.getElementById('fixLinkBtn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '⏳ Исправляем...';
+      try {
+        await apiRequest('POST', '/subscription/fix-broken-link', {});
+        btn.textContent = '✅ Исправлено! Перезагружаем...';
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        btn.textContent = '🔧 Исправить ссылку VPN';
+        alert('Не удалось исправить: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+  }
+
   function setupCopyBtn() {
     const copyBtn = document.getElementById('copyBtn');
     if (!copyBtn) return;
@@ -304,6 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([loadUser(), loadSubscription()]);
   setupPlanButtons();
   setupCopyBtn();
+  setupFixLinkBtn();
   setupVpnNameEdit();
   setupEmailEdit();
   setupEmailEditFor('emailBtnProfile', 'emailEditBoxProfile', 'emailInputProfile',
