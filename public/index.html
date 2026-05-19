@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TouchVPN — Безопасный VPN сервис</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="navbar-logo">
+      <div class="logo-icon">🛡</div>
+      TouchVPN
+    </a>
+    <div class="navbar-links">
+      <a id="navLogin" href="/login" class="btn btn-outline">Войти</a>
+      <a id="navRegister" href="/register" class="btn btn-primary">Начать</a>
+      <a id="navDashboard" href="/dashboard" class="btn btn-primary" style="display:none">Личный кабинет</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">🔒 Безопасно и надёжно</div>
+    <h1>Ваша свобода<br>в интернете</h1>
+    <p>Быстрый VPN на базе VLESS/VMess протоколов. Без логов, без ограничений, с мгновенной активацией.</p>
+    <div class="hero-cta">
+      <a href="/register" class="btn btn-primary btn-lg">Подключиться сейчас</a>
+      <a href="#pricing" class="btn btn-outline btn-lg">Тарифы</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Почему TouchVPN</h2>
+    <p class="section-subtitle">Всё что нужно для безопасного интернета</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Высокая скорость</h3>
+        <p>Серверы на топовых хостингах с минимальной задержкой и максимальным каналом.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Полная анонимность</h3>
+        <p>Никаких логов, никакого отслеживания. Протоколы VLESS и VMess с шифрованием.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Любые устройства</h3>
+        <p>iOS, Android, Windows, macOS. Подключение через QR-код за 30 секунд.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏱</div>
+        <h3>Мгновенная активация</h3>
+        <p>Оплатил — получил QR-код. Автоматическая настройка без ручной работы.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <h3>Доступные цены</h3>
+        <p>От 200 рублей за 7 дней. Никаких скрытых комиссий.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>Лёгкое продление</h3>
+        <p>Продли подписку одной кнопкой прямо в личном кабинете.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="pricing">
+    <h2 class="section-title">Тарифы</h2>
+    <p class="section-subtitle">Простые цены, никаких сюрпризов</p>
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-days">7 дней</div>
+        <div class="pricing-price">200 <span>₽</span></div>
+        <div class="pricing-per">≈ 28 ₽/день</div>
+        <ul class="pricing-features">
+          <li>Безлимитный трафик</li>
+          <li>VLESS + VMess</li>
+          <li>QR-код сразу</li>
+          <li>Все устройства</li>
+        </ul>
+        <button class="btn btn-outline btn-full buy-plan-btn" data-plan="7">Выбрать</button>
+      </div>
+
+      <div class="pricing-card popular">
+        <div class="popular-badge">🔥 Популярный</div>
+        <div class="pricing-days">30 дней</div>
+        <div class="pricing-price">500 <span>₽</span></div>
+        <div class="pricing-per">≈ 17 ₽/день</div>
+        <ul class="pricing-features">
+          <li>Безлимитный трафик</li>
+          <li>VLESS + VMess</li>
+          <li>QR-код сразу</li>
+          <li>Все устройства</li>
+        </ul>
+        <button class="btn btn-primary btn-full buy-plan-btn" data-plan="30">Выбрать</button>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-days">14 дней</div>
+        <div class="pricing-price">400 <span>₽</span></div>
+        <div class="pricing-per">≈ 29 ₽/день</div>
+        <ul class="pricing-features">
+          <li>Безлимитный трафик</li>
+          <li>VLESS + VMess</li>
+          <li>QR-код сразу</li>
+          <li>Все устройства</li>
+        </ul>
+        <button class="btn btn-outline btn-full buy-plan-btn" data-plan="14">Выбрать</button>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Как это работает</h2>
+    <p class="section-subtitle">3 шага до защищённого интернета</p>
+    <div class="features-grid" style="max-width:700px; margin: 0 auto;">
+      <div class="feature-card" style="text-align:center;">
+        <div class="feature-icon" style="margin: 0 auto 16px;">1️⃣</div>
+        <h3>Регистрация</h3>
+        <p>Создайте аккаунт по телефону или email. Это займёт 30 секунд.</p>
+      </div>
+      <div class="feature-card" style="text-align:center;">
+        <div class="feature-icon" style="margin: 0 auto 16px;">2️⃣</div>
+        <h3>Оплата</h3>
+        <p>Выберите тариф и оплатите через Freekassa. Принимаем карты, СБП.</p>
+      </div>
+      <div class="feature-card" style="text-align:center;">
+        <div class="feature-icon" style="margin: 0 auto 16px;">3️⃣</div>
+        <h3>Подключение</h3>
+        <p>Скачайте Streisand, отсканируйте QR-код и включите VPN.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>© 2024 TouchVPN · <a href="#">Поддержка</a> · <a href="#">Политика конфиденциальности</a></p>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/index.js"></script>
+</body>
+</html>
