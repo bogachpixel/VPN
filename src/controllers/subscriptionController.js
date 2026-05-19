@@ -5,6 +5,9 @@ const { createMarzbanUser } = require('../services/marzbanService');
 function injectVpnName(link, vpnName) {
   if (!link || !vpnName) return link;
   try {
+    // Only modify direct protocol URIs — HTTP subscription URLs must stay untouched
+    const isProtoUri = /^(vless|vmess|trojan|ss|ssr):\/\//i.test(link);
+    if (!isProtoUri) return link;
     const hashIdx = link.indexOf('#');
     const base = hashIdx >= 0 ? link.substring(0, hashIdx) : link;
     return base + '#' + encodeURIComponent(vpnName);
