@@ -12,11 +12,11 @@ async function handleFreekassaWebhook(req, res) {
 
     if (!MERCHANT_ID || !AMOUNT || !MERCHANT_ORDER_ID || !SIGN) {
       console.error('[Freekassa webhook] Missing required params');
-      return res.status(400).send('NO');
+      return res.status(200).send('NO');
     }
 
     if (!verifyWebhook(params)) {
-      return res.status(400).send('NO');
+      return res.status(200).send('NO');
     }
 
     const paymentResult = await pool.query(
@@ -29,7 +29,7 @@ async function handleFreekassaWebhook(req, res) {
 
     if (paymentResult.rows.length === 0) {
       console.error('Webhook: order not found', MERCHANT_ORDER_ID);
-      return res.status(404).send('NO');
+      return res.status(200).send('NO');
     }
 
     const payment = paymentResult.rows[0];
@@ -101,7 +101,7 @@ async function handleFreekassaWebhook(req, res) {
     return res.send('YES');
   } catch (err) {
     console.error('Webhook error:', err);
-    return res.status(500).send('NO');
+    return res.status(200).send('NO');
   }
 }
 
