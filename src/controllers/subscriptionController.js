@@ -123,4 +123,55 @@ async function testActivate(req, res) {
   }
 }
 
-module.exports = { getActiveSubscription, getPaymentHistory, testActivate };
+async function refreshSubscription(req, res) {
+  try {
+    const userId = req.userId;
+
+    const result = await pool.query(
+      `SELECT * FROM subscriptions
+       WHERE user_id = $1 AND status = 'active'
+       ORDER BY expires_at DESC LIMIT 1`,
+      [userId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Активная подписка не найдена' });
+    }
+
+    const sub = result.rows[0];
+    const expireTimestamp = Math.floor(new Date(sub.expires_at).getTime() / 1000);
+
+    let marzbanUsername = sub.marzban_username;
+    let marzbanLink = '';
+
+    const { createMarzbanUser, getMarzbanUser, updateMarzbanUser } = require('../services/marzbanService');
+
+    if (marzbanUsername) {
+      try {
+        const marzbanUser = await getMarzbanUser(marzbanUsername);
+        marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      } catch (e) {
+        // user not found — create new
+        marzbanUsername = `vpn_${userId}_${Date.now()}`;
+        const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
+        marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      }
+    } else {
+      marzbanUsername = `vpn_${userId}_${Date.now()}`;
+      const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
+      marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+    }
+
+    await pool.query(
+      'UPDATE subscriptions SET marzban_username = $1, marzban_link = $2 WHERE id = $3',
+      [marzbanUsername, marzbanLink, sub.id]
+    );
+
+    return res.json({ success: true, marzbanLink });
+  } catch (err) {
+    console.error('RefreshSubscription error:', err);
+    return res.status(500).json({ error: 'Не удалось подключиться к серверу VPN. Попробуйте позже.' });
+  }
+}
+
+module.exports = { getActiveSubscription, getPaymentHistory, testActivate, refreshSubscription };
