@@ -280,26 +280,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  function setupRefreshLinkBtn() {
-    const btn = document.getElementById('refreshLinkBtn');
-    const alertEl = document.getElementById('refreshAlert');
-    if (!btn) return;
-    btn.addEventListener('click', async () => {
-      hideAlert(alertEl);
-      btn.disabled = true;
-      btn.textContent = '⏳ Обновляем...';
-      try {
-        await apiRequest('POST', '/subscription/refresh', {});
-        showAlert(alertEl, '✅ Ссылка обновлена! Перезагружаем...', 'success');
-        setTimeout(() => window.location.reload(), 1500);
-      } catch (err) {
-        showAlert(alertEl, err.message, 'error');
-        btn.disabled = false;
-        btn.textContent = '🔄 Обновить ссылку VPN';
-      }
-    });
-  }
-
   function setupCopyBtn() {
     const copyBtn = document.getElementById('copyBtn');
     if (!copyBtn) return;
@@ -324,7 +304,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([loadUser(), loadSubscription()]);
   setupPlanButtons();
   setupCopyBtn();
-  setupRefreshLinkBtn();
   setupVpnNameEdit();
   setupEmailEdit();
   setupEmailEditFor('emailBtnProfile', 'emailEditBoxProfile', 'emailInputProfile',
