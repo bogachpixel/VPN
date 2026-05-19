@@ -1,79 +1,100 @@
-/* ===== PHONE MASK +7 (XXX) XXX-XX-XX ===== */
-function applyPhoneMask(input) {
-  if (!input) return;
+/* ===== COUNTRIES ===== */
+const COUNTRIES = [
+  { flag:'🇷🇺', name:'Россия',          dial:'+7',   maxD:10, mask:'(###) ###-##-##'  },
+  { flag:'🇰🇿', name:'Казахстан',       dial:'+7',   maxD:10, mask:'(###) ###-##-##'  },
+  { flag:'🇧🇾', name:'Беларусь',        dial:'+375', maxD:9,  mask:'(##) ###-##-##'   },
+  { flag:'🇺🇦', name:'Украина',         dial:'+380', maxD:9,  mask:'(##) ###-##-##'   },
+  { flag:'🇺🇿', name:'Узбекистан',      dial:'+998', maxD:9,  mask:'(##) ###-##-##'   },
+  { flag:'🇦🇿', name:'Азербайджан',     dial:'+994', maxD:9,  mask:'(##) ###-##-##'   },
+  { flag:'🇬🇪', name:'Грузия',          dial:'+995', maxD:9,  mask:'(###) ##-##-##'   },
+  { flag:'🇦🇲', name:'Армения',         dial:'+374', maxD:8,  mask:'(##) ##-##-##'    },
+  { flag:'🇰🇬', name:'Кыргызстан',     dial:'+996', maxD:9,  mask:'(###) ###-###'    },
+  { flag:'🇹🇯', name:'Таджикистан',     dial:'+992', maxD:9,  mask:'(##) ###-##-##'   },
+  { flag:'🇹🇲', name:'Туркменистан',    dial:'+993', maxD:8,  mask:'(##) ##-##-##'    },
+  { flag:'🇲🇩', name:'Молдова',         dial:'+373', maxD:8,  mask:'(##) ##-##-##'    },
+  { flag:'🇹🇷', name:'Турция',          dial:'+90',  maxD:10, mask:'(###) ###-####'   },
+  { flag:'🇦🇪', name:'ОАЭ',             dial:'+971', maxD:9,  mask:'## ###-####'      },
+  { flag:'🇩🇪', name:'Германия',        dial:'+49',  maxD:11, mask:'(###) ########'   },
+  { flag:'🇺🇸', name:'США',             dial:'+1',   maxD:10, mask:'(###) ###-####'   },
+  { flag:'🇬🇧', name:'Великобритания',  dial:'+44',  maxD:10, mask:'#####-#####'      },
+];
 
-  input.setAttribute('placeholder', '+7 (___) ___-__-__');
-  input.setAttribute('maxlength', '18');
-  input.setAttribute('autocomplete', 'tel');
-  input.setAttribute('inputmode', 'tel');
+/* ===== PHONE FIELD SETUP ===== */
+function setupPhoneField(wrapEl) {
+  const btn      = wrapEl.querySelector('.country-btn');
+  const flagEl   = wrapEl.querySelector('.c-flag');
+  const dialEl   = wrapEl.querySelector('.c-dial');
+  const dropdown = wrapEl.querySelector('.country-dropdown');
+  const input    = wrapEl.querySelector('input[type="tel"]');
+  if (!btn || !input) return;
 
-  function formatPhone(raw) {
-    const digits = raw.replace(/\D/g, '');
-    let d = digits;
-    if (d.startsWith('8')) d = '7' + d.slice(1);
-    if (d.startsWith('7')) d = d.slice(1);
-    d = d.slice(0, 10);
+  let sel = COUNTRIES[0];
 
-    let result = '+7';
-    if (d.length === 0) return result;
-    result += ' (' + d.slice(0, 3);
-    if (d.length < 3) return result;
-    result += ')';
-    if (d.length === 3) return result;
-    result += ' ' + d.slice(3, 6);
-    if (d.length < 6) return result;
-    result += '-' + d.slice(6, 8);
-    if (d.length < 8) return result;
-    result += '-' + d.slice(8, 10);
-    return result;
-  }
+  dropdown.innerHTML = COUNTRIES.map((c, i) =>
+    `<button type="button" class="country-item" data-i="${i}">
+      <span class="ci-flag">${c.flag}</span>
+      <span class="ci-name">${c.name}</span>
+      <span class="ci-dial">${c.dial}</span>
+    </button>`
+  ).join('');
 
-  function getRawPhone(formatted) {
-    return '+7' + formatted.replace(/\D/g, '').replace(/^[78]/, '');
-  }
-
-  input.addEventListener('focus', () => {
-    if (!input.value) {
-      input.value = '+7 (';
+  function fmt(raw) {
+    const d = raw.replace(/\D/g, '').slice(0, sel.maxD);
+    let res = '', di = 0;
+    for (let i = 0; i < sel.mask.length; i++) {
+      if (di >= d.length) break;
+      res += sel.mask[i] === '#' ? d[di++] : sel.mask[i];
     }
-  });
+    return res;
+  }
 
-  input.addEventListener('blur', () => {
-    const digits = input.value.replace(/\D/g, '');
-    if (digits.length <= 1) input.value = '';
-  });
+  function pickCountry(c, idx) {
+    sel = c;
+    flagEl.textContent = c.flag;
+    dialEl.textContent = c.dial;
+    input.placeholder = c.mask.replace(/#/g, '_');
+    input.value = '';
+    dropdown.querySelectorAll('.country-item').forEach((el, i) =>
+      el.classList.toggle('active', i === idx)
+    );
+    dropdown.style.display = 'none';
+    input.focus();
+  }
 
-  input.addEventListener('input', (e) => {
+  pickCountry(COUNTRIES[0], 0);
+
+  input.setAttribute('inputmode', 'tel');
+  input.setAttribute('autocomplete', 'tel');
+
+  input.addEventListener('input', () => {
     const pos = input.selectionStart;
     const old = input.value;
-    const formatted = formatPhone(old);
-    input.value = formatted;
-    const diff = formatted.length - old.length;
-    const newPos = Math.max(0, pos + diff);
-    input.setSelectionRange(newPos, newPos);
-  });
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace') {
-      const val = input.value;
-      const pos = input.selectionStart;
-      if (pos <= 4 && val.startsWith('+7')) {
-        e.preventDefault();
-      }
-    }
+    const next = fmt(old);
+    input.value = next;
+    input.setSelectionRange(Math.max(0, pos + next.length - old.length),
+                            Math.max(0, pos + next.length - old.length));
   });
 
   input.addEventListener('paste', (e) => {
     e.preventDefault();
-    const pasted = (e.clipboardData || window.clipboardData).getData('text');
-    input.value = formatPhone(pasted);
+    input.value = fmt((e.clipboardData || window.clipboardData).getData('text'));
   });
 
-  input._getRaw = () => {
-    const digits = input.value.replace(/\D/g, '');
-    if (digits.length < 11) return input.value.trim();
-    return '+7' + digits.slice(digits.startsWith('7') || digits.startsWith('8') ? 1 : 0);
-  };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = dropdown.style.display !== 'none';
+    document.querySelectorAll('.country-dropdown').forEach(d => d.style.display = 'none');
+    if (!open) dropdown.style.display = 'block';
+  });
+
+  document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+  dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+  dropdown.querySelectorAll('.country-item').forEach((item, i) => {
+    item.addEventListener('click', () => pickCountry(COUNTRIES[i], i));
+  });
+
+  wrapEl._getRaw = () => sel.dial + input.value.replace(/\D/g, '');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -88,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let usePhone = true;
 
-  document.querySelectorAll('input[type="tel"]').forEach(applyPhoneMask);
+  document.querySelectorAll('.phone-field-wrap').forEach(setupPhoneField);
 
   function setupToggle(formEl) {
     const phoneBtn = formEl.querySelector('[data-type="phone"]');
@@ -123,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
       hideAlert(alert);
 
       const btn = loginForm.querySelector('button[type="submit"]');
-      const phoneInput = loginForm.querySelector('#phone');
-      const phone = phoneInput?._getRaw ? phoneInput._getRaw() : phoneInput?.value.trim();
+      const phoneWrap = loginForm.querySelector('.phone-field-wrap');
+      const phone = phoneWrap?._getRaw ? phoneWrap._getRaw() : loginForm.querySelector('#phone')?.value.trim();
       const email = loginForm.querySelector('#email')?.value.trim();
       const password = loginForm.querySelector('#password').value;
 
@@ -163,8 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
       hideAlert(alert);
 
       const btn = registerForm.querySelector('button[type="submit"]');
-      const phoneInput = registerForm.querySelector('#phone');
-      const phone = phoneInput?._getRaw ? phoneInput._getRaw() : phoneInput?.value.trim();
+      const phoneWrap = registerForm.querySelector('.phone-field-wrap');
+      const phone = phoneWrap?._getRaw ? phoneWrap._getRaw() : registerForm.querySelector('#phone')?.value.trim();
       const email = registerForm.querySelector('#email')?.value.trim();
       const vpnName = registerForm.querySelector('#vpnName')?.value.trim();
       const password = registerForm.querySelector('#password').value;

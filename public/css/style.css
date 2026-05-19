@@ -517,3 +517,78 @@ a:hover { color: var(--neon-indigo); }
   .plans-grid { grid-template-columns: 1fr; }
   .plan-btn { min-height: 54px; }
 }
+
+/* ===== PHONE FIELD WITH COUNTRY SELECTOR ===== */
+.phone-field-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-input);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: visible;
+}
+.phone-field-wrap:focus-within {
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1), 0 0 16px rgba(0, 212, 255, 0.12);
+}
+
+.country-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 12px; height: 42px; min-width: 86px;
+  background: rgba(0, 212, 255, 0.055);
+  border: none; border-right: 1px solid var(--border-soft);
+  border-radius: var(--radius) 0 0 var(--radius);
+  cursor: pointer; color: var(--text);
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.country-btn:hover { background: rgba(0, 212, 255, 0.1); }
+
+.c-flag { font-size: 1.15rem; line-height: 1; }
+.c-dial { font-size: 0.82rem; font-weight: 600; color: var(--accent); font-family: 'Share Tech Mono', monospace; }
+.c-chev { font-size: 0.58rem; color: var(--text-secondary); margin-left: 1px; }
+
+.phone-local {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 var(--radius) var(--radius) 0 !important;
+  min-height: 42px;
+  box-shadow: none !important;
+  padding-left: 12px;
+}
+.phone-local:focus { box-shadow: none !important; background: transparent !important; }
+
+/* Dropdown */
+.country-dropdown {
+  position: absolute;
+  top: calc(100% + 5px); left: 0; z-index: 9999;
+  width: 250px; max-height: 290px; overflow-y: auto;
+  background: rgba(15, 20, 32, 0.98);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 24px rgba(0,212,255,0.07);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,212,255,0.2) transparent;
+}
+.country-dropdown::-webkit-scrollbar { width: 4px; }
+.country-dropdown::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 4px; }
+
+.country-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; width: 100%;
+  background: none; border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif; text-align: left;
+  transition: background 0.12s; color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.country-item:last-child { border-bottom: none; }
+.country-item:hover { background: rgba(0, 212, 255, 0.07); }
+.country-item.active { background: rgba(0, 212, 255, 0.1); }
+
+.ci-flag { font-size: 1.15rem; flex-shrink: 0; line-height: 1; }
+.ci-name { flex: 1; font-size: 0.82rem; color: var(--text-muted); }
+.ci-dial { font-family: 'Share Tech Mono', monospace; font-size: 0.79rem; color: var(--accent); flex-shrink: 0; }
