@@ -51,6 +51,20 @@
           <div id="vpnNameAlert" class="alert" style="margin-top:8px; margin-bottom:0;"></div>
         </div>
 
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; padding: 8px 0 4px;">
+          <span style="font-size:0.78rem; color:var(--text-secondary); min-width:60px;">Email:</span>
+          <span id="emailDisplay" style="font-size:0.88rem; color:var(--text-secondary); flex:1;">—</span>
+          <button id="editEmailBtn" class="btn btn-ghost" style="padding:4px 10px; min-height:28px; font-size:0.76rem;">✏️</button>
+        </div>
+        <div id="emailEditBox" style="display:none; margin-bottom:10px;">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input class="form-input" id="emailInput" type="email" placeholder="example@mail.com" maxlength="120" style="flex:1; min-width:180px; min-height:36px; font-size:0.88rem;" />
+            <button id="saveEmailBtn" class="btn btn-primary" style="min-height:36px; padding:6px 14px; font-size:0.82rem;">Сохранить</button>
+            <button id="cancelEmailBtn" class="btn btn-outline" style="min-height:36px; padding:6px 12px; font-size:0.82rem;">✕</button>
+          </div>
+          <div id="emailAlert" class="alert" style="margin-top:8px; margin-bottom:0;"></div>
+        </div>
+
         <div class="subscription-status">
           <div class="status-dot active"></div>
           <span class="status-label">Активна</span>
@@ -133,6 +147,26 @@
           <div class="empty-icon">📵</div>
           <h3 style="margin-bottom:8px;">Нет активной подписки</h3>
           <p>Выберите тариф ниже и подключитесь к VPN</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE CARD (always visible) -->
+    <div id="profileSection" style="display:none;">
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">👤 Профиль</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding: 6px 0;">
+          <span style="font-size:0.78rem; color:var(--text-secondary); min-width:60px;">Email:</span>
+          <span id="emailDisplayProfile" style="font-size:0.88rem; color:var(--text-secondary); flex:1;">Не указан</span>
+          <button id="editEmailBtnProfile" class="btn btn-ghost" style="padding:4px 10px; min-height:28px; font-size:0.76rem;">✏️</button>
+        </div>
+        <div id="emailEditBoxProfile" style="display:none; margin-top:8px;">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input class="form-input" id="emailInputProfile" type="email" placeholder="example@mail.com" maxlength="120" style="flex:1; min-width:180px; min-height:36px; font-size:0.88rem;" />
+            <button id="saveEmailBtnProfile" class="btn btn-primary" style="min-height:36px; padding:6px 14px; font-size:0.82rem;">Сохранить</button>
+            <button id="cancelEmailBtnProfile" class="btn btn-outline" style="min-height:36px; padding:6px 12px; font-size:0.82rem;">✕</button>
+          </div>
+          <div id="emailAlertProfile" class="alert" style="margin-top:8px; margin-bottom:0;"></div>
         </div>
       </div>
     </div>

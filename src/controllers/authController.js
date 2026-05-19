@@ -111,6 +111,31 @@ async function seedTestUser(req, res) {
   }
 }
 
+async function updateEmail(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email не может быть пустым' });
+    }
+    const trimmed = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      return res.status(400).json({ error: 'Неверный формат email' });
+    }
+    const existing = await pool.query(
+      'SELECT id FROM users WHERE email = $1 AND id != $2',
+      [trimmed, req.userId]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Этот email уже используется' });
+    }
+    await pool.query('UPDATE users SET email = $1 WHERE id = $2', [trimmed, req.userId]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('UpdateEmail error:', err);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
 async function updateVpnName(req, res) {
   try {
     const { vpnName } = req.body;
@@ -125,4 +150,4 @@ async function updateVpnName(req, res) {
   }
 }
 
-module.exports = { register, login, getMe, seedTestUser, updateVpnName };
+module.exports = { register, login, getMe, seedTestUser, updateVpnName, updateEmail };

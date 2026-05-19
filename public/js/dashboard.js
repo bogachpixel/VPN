@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentVpnName = '';
 
+  let currentEmail = '';
+
   async function loadUser() {
     try {
       const user = await apiRequest('GET', '/auth/me');
@@ -30,6 +32,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentVpnName = user.vpn_name || '';
       const vpnNameDisplay = document.getElementById('vpnNameDisplay');
       if (vpnNameDisplay) vpnNameDisplay.textContent = currentVpnName || 'Не задано';
+
+      currentEmail = user.email || '';
+      const emailVal = currentEmail || 'Не указан';
+      const emailDisplay = document.getElementById('emailDisplay');
+      if (emailDisplay) emailDisplay.textContent = emailVal;
+      const emailDisplayProfile = document.getElementById('emailDisplayProfile');
+      if (emailDisplayProfile) emailDisplayProfile.textContent = emailVal;
     } catch {}
   }
 
@@ -76,6 +85,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (noSubSection) noSubSection.style.display = '';
         if (renewSection) renewSection.style.display = '';
       }
+      const profileSection = document.getElementById('profileSection');
+      if (profileSection) profileSection.style.display = '';
     } catch (err) {
       if (loading) loading.style.display = 'none';
       if (noSubSection) noSubSection.style.display = '';
@@ -233,6 +244,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  function setupEmailEdit() {
+    const editBtn   = document.getElementById('editEmailBtn');
+    const editBox   = document.getElementById('emailEditBox');
+    const input     = document.getElementById('emailInput');
+    const saveBtn   = document.getElementById('saveEmailBtn');
+    const cancelBtn = document.getElementById('cancelEmailBtn');
+    const display   = document.getElementById('emailDisplay');
+    const alert     = document.getElementById('emailAlert');
+    if (!editBtn) return;
+
+    editBtn.addEventListener('click', () => {
+      if (input) input.value = currentEmail;
+      editBox.style.display = 'block';
+      if (input) input.focus();
+    });
+
+    if (cancelBtn) cancelBtn.addEventListener('click', () => { editBox.style.display = 'none'; hideAlert(alert); });
+
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+      const val = input.value.trim();
+      if (!val) { showAlert(alert, 'Введите email', 'error'); return; }
+      saveBtn.disabled = true; saveBtn.textContent = '...';
+      try {
+        await apiRequest('POST', '/auth/email', { email: val });
+        currentEmail = val.toLowerCase();
+        if (display) display.textContent = currentEmail;
+        editBox.style.display = 'none';
+        hideAlert(alert);
+      } catch (err) {
+        showAlert(alert, err.message, 'error');
+      } finally {
+        saveBtn.disabled = false; saveBtn.textContent = 'Сохранить';
+      }
+    });
+  }
+
   function setupCopyBtn() {
     const copyBtn = document.getElementById('copyBtn');
     if (!copyBtn) return;
@@ -258,7 +305,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupPlanButtons();
   setupCopyBtn();
   setupVpnNameEdit();
+  setupEmailEdit();
+  setupEmailEditFor('emailBtnProfile', 'emailEditBoxProfile', 'emailInputProfile',
+                    'saveEmailBtnProfile', 'cancelEmailBtnProfile',
+                    'emailDisplayProfile', 'emailAlertProfile');
   setupTestBtn();
+
+  function setupEmailEditFor(editBtnId, editBoxId, inputId, saveBtnId, cancelBtnId, displayId, alertId) {
+    const editBtn   = document.getElementById('edit' + editBtnId.charAt(0).toUpperCase() + editBtnId.slice(1));
+    const editBox   = document.getElementById(editBoxId);
+    const input     = document.getElementById(inputId);
+    const saveBtn   = document.getElementById(saveBtnId);
+    const cancelBtn = document.getElementById(cancelBtnId);
+    const display   = document.getElementById(displayId);
+    const alertEl   = document.getElementById(alertId);
+    if (!editBtn) return;
+    editBtn.addEventListener('click', () => { if (input) input.value = currentEmail; editBox.style.display = 'block'; if (input) input.focus(); });
+    if (cancelBtn) cancelBtn.addEventListener('click', () => { editBox.style.display = 'none'; hideAlert(alertEl); });
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+      const val = input.value.trim();
+      if (!val) { showAlert(alertEl, 'Введите email', 'error'); return; }
+      saveBtn.disabled = true; saveBtn.textContent = '...';
+      try {
+        await apiRequest('POST', '/auth/email', { email: val });
+        currentEmail = val.toLowerCase();
+        const emailVal = currentEmail;
+        ['emailDisplay','emailDisplayProfile'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = emailVal; });
+        editBox.style.display = 'none'; hideAlert(alertEl);
+      } catch (err) { showAlert(alertEl, err.message, 'error'); }
+      finally { saveBtn.disabled = false; saveBtn.textContent = 'Сохранить'; }
+    });
+  }
 
   function setupTestBtn() {
     const testBtn = document.getElementById('testBtn');
