@@ -31,8 +31,7 @@ async function createMarzbanUser(username, expireTimestamp) {
     {
       username,
       proxies: {
-        vless: { flow: '' },
-        vmess: {}
+        shadowsocks: {}
       },
       expire: expireTimestamp,
       data_limit: 0,
