@@ -1,4 +1,5 @@
 (function () {
+  if (!window.location.hostname.includes('vpn.touchme.tech')) return;
   if (sessionStorage.getItem('sc_shown')) return;
   sessionStorage.setItem('sc_shown', '1');
 
