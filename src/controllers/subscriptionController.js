@@ -1,6 +1,14 @@
 const { pool, logAccess } = require('../models/db');
 const QRCode = require('qrcode');
-const { createMarzbanUser } = require('../services/marzbanService');
+const { createMarzbanUser, getMarzbanUser } = require('../services/marzbanService');
+
+function pickMarzbanLink(marzbanData) {
+  const direct = marzbanData.links && marzbanData.links[0];
+  if (direct && direct.startsWith('ss://')) return direct;
+  const sub = marzbanData.subscription_url || '';
+  if (sub && (sub.startsWith('http://') || sub.startsWith('https://'))) return sub;
+  return direct || sub || '';
+}
 
 function injectVpnName(link, vpnName) {
   if (!link || !vpnName) return link;
@@ -33,9 +41,26 @@ async function getActiveSubscription(req, res) {
       return res.json({ hasSubscription: false });
     }
 
-    const sub = result.rows[0];
+    let sub = result.rows[0];
     const vpnName = sub.vpn_name;
     const isExpired = new Date(sub.expires_at) < new Date();
+
+    // Auto-fix: if stored link is a relative /sub/... path, fetch direct ss:// from Marzban
+    if (sub.marzban_link && sub.marzban_link.startsWith('/sub/') && sub.marzban_username) {
+      try {
+        const marzbanData = await getMarzbanUser(sub.marzban_username);
+        const fixedLink = pickMarzbanLink(marzbanData);
+        if (fixedLink && !fixedLink.startsWith('/sub/')) {
+          await pool.query(
+            'UPDATE subscriptions SET marzban_link = $1 WHERE id = $2',
+            [fixedLink, sub.id]
+          );
+          sub = { ...sub, marzban_link: fixedLink };
+        }
+      } catch (e) {
+        console.error('Auto-fix marzban_link error:', e.message);
+      }
+    }
 
     const displayLink = injectVpnName(sub.marzban_link, vpnName);
 
@@ -98,7 +123,7 @@ async function testActivate(req, res) {
 
     try {
       const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
-      marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      marzbanLink = pickMarzbanLink(marzbanUser);
       if (!marzbanLink) throw new Error('Marzban returned empty link');
     } catch (err) {
       console.error('Marzban unavailable for test activation:', err.message);
@@ -159,17 +184,17 @@ async function fixBrokenLink(req, res) {
       // Try to get existing user
       try {
         const marzbanUser = await getMarzbanUser(marzbanUsername);
-        marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+        marzbanLink = pickMarzbanLink(marzbanUser);
       } catch (e) {
         // Create new user
         marzbanUsername = `vpn_${userId}_${Date.now()}`;
         const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
-        marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+        marzbanLink = pickMarzbanLink(marzbanUser);
       }
     } else {
       marzbanUsername = `vpn_${userId}_${Date.now()}`;
       const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
-      marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      marzbanLink = pickMarzbanLink(marzbanUser);
     }
 
     if (!marzbanLink || marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {

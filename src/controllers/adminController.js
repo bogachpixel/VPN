@@ -184,7 +184,8 @@ async function reissueQr(req, res) {
       return res.status(503).json({ error: 'Не удалось создать нового VPN-пользователя: ' + err.message });
     }
 
-    const newLink = newMarzbanData.subscription_url || (newMarzbanData.links && newMarzbanData.links[0]) || '';
+    const rawNewLink = (newMarzbanData.links && newMarzbanData.links[0]) || newMarzbanData.subscription_url || '';
+    const newLink = rawNewLink.startsWith('/sub/') ? '' : rawNewLink;
     if (!newLink) {
       try { await deleteMarzbanUser(newUsername); } catch (_) {}
       return res.status(503).json({ error: 'Marzban не вернул ссылку' });

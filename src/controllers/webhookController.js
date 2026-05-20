@@ -76,7 +76,8 @@ async function handleFreekassaWebhook(req, res) {
       );
 
       const marzbanUser = await getMarzbanUser(marzbanUsername);
-      marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      const rawLink = (marzbanUser.links && marzbanUser.links[0]) || marzbanUser.subscription_url || '';
+      marzbanLink = rawLink.startsWith('/sub/') ? '' : rawLink;
       if (!marzbanLink || marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {
         throw new Error('Marzban returned invalid link');
       }
@@ -90,7 +91,8 @@ async function handleFreekassaWebhook(req, res) {
       marzbanUsername = `vpn_${userId}_${Date.now()}`;
 
       const marzbanUser = await createMarzbanUser(marzbanUsername, expireTimestamp);
-      marzbanLink = marzbanUser.subscription_url || (marzbanUser.links && marzbanUser.links[0]) || '';
+      const rawLink2 = (marzbanUser.links && marzbanUser.links[0]) || marzbanUser.subscription_url || '';
+      marzbanLink = rawLink2.startsWith('/sub/') ? '' : rawLink2;
       if (!marzbanLink || marzbanLink.includes('00000000-0000-0000-0000-000000000000')) {
         throw new Error('Marzban returned invalid link');
       }
