@@ -290,7 +290,7 @@ a:hover { color: var(--amber-light); }
   background: var(--bg-card);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius); padding: 28px 22px; text-align: center;
-  box-shadow: var(--shadow-card); transition: all 0.2s ease; position: relative; overflow: hidden;
+  box-shadow: var(--shadow-card); transition: all 0.2s ease; position: relative;
 }
 .pricing-card::before {
   content: ''; position: absolute; top: 0; left: 0;
