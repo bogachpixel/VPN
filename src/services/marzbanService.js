@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const MARZBAN_URL = process.env.MARZBAN_URL || 'http://142.93.107.127:8000';
+const MARZBAN_URL = process.env.MARZBAN_URL || 'http://127.0.0.1:8000';
 let marzbanToken = null;
 let tokenExpiry = null;
 
@@ -31,14 +31,15 @@ async function createMarzbanUser(username, expireTimestamp) {
     {
       username,
       proxies: {
-        vless: { flow: '' },
-        vmess: {}
+        shadowsocks: {}
+      },
+      inbounds: {
+        shadowsocks: ['Shadowsocks TCP']
       },
       expire: expireTimestamp,
       data_limit: 0,
       data_limit_reset_strategy: 'no_reset',
-      status: 'active',
-      inbounds: {}
+      status: 'active'
     },
     { headers: { Authorization: `Bearer ${token}` } }
   );
