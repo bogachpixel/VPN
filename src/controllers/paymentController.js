@@ -1,4 +1,4 @@
-const { pool } = require('../models/db');
+const { pool, logAccess } = require('../models/db');
 const { generatePaymentUrl } = require('../services/freekassaService');
 
 const PLANS = {
@@ -31,6 +31,7 @@ async function createPayment(req, res) {
     );
 
     const paymentUrl = generatePaymentUrl(orderId, plan.price);
+    logAccess(userId, req, 'payment_init');
 
     const widgetApiKey = process.env.FREEKASSA_API_KEY || '';
     const merchantId  = process.env.FREEKASSA_MERCHANT_ID;
@@ -50,7 +51,7 @@ async function getPaymentStatus(req, res) {
       'SELECT status FROM payments WHERE order_id = $1 AND user_id = $2',
       [orderId, req.userId]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    if (!result.rows.length) return res.status(404).json({ error: 'Не найдено' });
     return res.json({ status: result.rows[0].status });
   } catch (err) {
     return res.status(500).json({ error: 'Ошибка сервера' });

@@ -1,9 +1,10 @@
 const { pool } = require('../models/db');
+const { createMarzbanUser, deleteMarzbanUser, disableMarzbanUser } = require('../services/marzbanService');
 
 function checkAdminKey(req, res) {
   const key = req.headers['x-admin-key'] || req.query.key;
   if (!key || key !== process.env.ADMIN_KEY) {
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Нет доступа' });
     return false;
   }
   return true;
@@ -51,10 +52,14 @@ async function getUsers(req, res) {
         s.status AS sub_status,
         s.expires_at,
         s.plan_days,
+        s.last_site_ip,
+        s.qr_version,
+        s.suspected_sharing,
+        s.marzban_username,
         COALESCE(p.total_paid, 0) AS total_paid
       FROM users u
       LEFT JOIN LATERAL (
-        SELECT status, expires_at, plan_days
+        SELECT status, expires_at, plan_days, last_site_ip, qr_version, suspected_sharing, marzban_username
         FROM subscriptions
         WHERE user_id = u.id AND status = 'active'
         ORDER BY expires_at DESC LIMIT 1
@@ -130,4 +135,140 @@ async function blockUser(req, res) {
   }
 }
 
-module.exports = { getStats, getUsers, getUserDetail, blockUser };
+async function getUserIpLogs(req, res) {
+  if (!checkAdminKey(req, res)) return;
+  try {
+    const userId = parseInt(req.params.id);
+    const result = await pool.query(
+      `SELECT ip_address, user_agent, action, created_at
+       FROM user_access_logs
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [userId]
+    );
+    return res.json({ logs: result.rows });
+  } catch (err) {
+    console.error('getUserIpLogs error:', err);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
+async function reissueQr(req, res) {
+  if (!checkAdminKey(req, res)) return;
+  try {
+    const userId = parseInt(req.params.id);
+
+    const subResult = await pool.query(
+      `SELECT id, marzban_username, expires_at, qr_version
+       FROM subscriptions
+       WHERE user_id = $1 AND status = 'active'
+       ORDER BY expires_at DESC LIMIT 1`,
+      [userId]
+    );
+    if (!subResult.rows.length) {
+      return res.status(404).json({ error: 'Активная подписка не найдена' });
+    }
+
+    const sub = subResult.rows[0];
+    const oldUsername = sub.marzban_username;
+    const expireTimestamp = Math.floor(new Date(sub.expires_at).getTime() / 1000);
+    const newVersion = (sub.qr_version || 1) + 1;
+    const newUsername = `vpn_${userId}_v${newVersion}_${Date.now()}`;
+
+    // 1. Create new Marzban user first
+    let newMarzbanData;
+    try {
+      newMarzbanData = await createMarzbanUser(newUsername, expireTimestamp);
+    } catch (err) {
+      return res.status(503).json({ error: 'Не удалось создать нового VPN-пользователя: ' + err.message });
+    }
+
+    const newLink = newMarzbanData.subscription_url || (newMarzbanData.links && newMarzbanData.links[0]) || '';
+    if (!newLink) {
+      try { await deleteMarzbanUser(newUsername); } catch (_) {}
+      return res.status(503).json({ error: 'Marzban не вернул ссылку' });
+    }
+
+    // 2. Delete old user
+    if (oldUsername) {
+      try {
+        await deleteMarzbanUser(oldUsername);
+      } catch (err) {
+        // Old delete failed — rollback new user, preserve old access
+        try { await deleteMarzbanUser(newUsername); } catch (_) {}
+        return res.status(503).json({ error: 'Не удалось удалить старого VPN-пользователя: ' + err.message });
+      }
+    }
+
+    // 3. Update DB only after both operations succeeded
+    await pool.query(
+      `UPDATE subscriptions
+       SET marzban_username = $1, marzban_link = $2, qr_version = $3
+       WHERE id = $4`,
+      [newUsername, newLink, newVersion, sub.id]
+    );
+
+    return res.json({ success: true, newVersion });
+  } catch (err) {
+    console.error('reissueQr error:', err);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
+async function disableVpn(req, res) {
+  if (!checkAdminKey(req, res)) return;
+  try {
+    const userId = parseInt(req.params.id);
+    const subResult = await pool.query(
+      `SELECT marzban_username FROM subscriptions
+       WHERE user_id = $1 AND status = 'active'
+       ORDER BY expires_at DESC LIMIT 1`,
+      [userId]
+    );
+    if (!subResult.rows.length || !subResult.rows[0].marzban_username) {
+      return res.status(404).json({ error: 'Активный VPN-пользователь не найден' });
+    }
+    await disableMarzbanUser(subResult.rows[0].marzban_username);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('disableVpn error:', err);
+    return res.status(500).json({ error: 'Ошибка: ' + err.message });
+  }
+}
+
+async function deleteVpn(req, res) {
+  if (!checkAdminKey(req, res)) return;
+  try {
+    const userId = parseInt(req.params.id);
+    const subResult = await pool.query(
+      `SELECT id, marzban_username FROM subscriptions
+       WHERE user_id = $1 AND status = 'active'
+       ORDER BY expires_at DESC LIMIT 1`,
+      [userId]
+    );
+    if (!subResult.rows.length) {
+      return res.status(404).json({ error: 'Активная подписка не найдена' });
+    }
+    const sub = subResult.rows[0];
+    if (sub.marzban_username) {
+      try {
+        await deleteMarzbanUser(sub.marzban_username);
+      } catch (err) {
+        console.error('deleteVpn: Marzban delete failed:', err.message);
+      }
+    }
+    await pool.query(
+      `UPDATE subscriptions
+       SET marzban_username = NULL, marzban_link = NULL, status = 'cancelled'
+       WHERE id = $1`,
+      [sub.id]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('deleteVpn error:', err);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+}
+
+module.exports = { getStats, getUsers, getUserDetail, blockUser, getUserIpLogs, reissueQr, disableVpn, deleteVpn };

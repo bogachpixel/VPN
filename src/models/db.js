@@ -50,10 +50,60 @@ async function initDB() {
       );
     `);
 
+    await client.query(`
+      ALTER TABLE subscriptions
+        ADD COLUMN IF NOT EXISTS suspected_sharing BOOLEAN DEFAULT false,
+        ADD COLUMN IF NOT EXISTS qr_version        INTEGER  DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS last_site_ip      VARCHAR(45);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_access_logs (
+        id         SERIAL PRIMARY KEY,
+        user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        action     VARCHAR(50),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_access_logs_user_id
+        ON user_access_logs(user_id);
+    `);
+
     console.log('Database initialized successfully');
   } finally {
     client.release();
   }
 }
 
-module.exports = { pool, initDB };
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const raw = forwarded
+    ? forwarded.split(',')[0].trim()
+    : (req.socket?.remoteAddress || req.ip || '');
+  return raw.replace(/^::ffff:/, '');
+}
+
+async function logAccess(userId, req, action) {
+  const ip = getClientIp(req);
+  const ua = (req.headers['user-agent'] || '').substring(0, 500);
+  pool.query(
+    'INSERT INTO user_access_logs (user_id, ip_address, user_agent, action) VALUES ($1,$2,$3,$4)',
+    [userId, ip, ua, action]
+  ).catch(e => console.error('logAccess error:', e.message));
+  pool.query(
+    `UPDATE subscriptions SET last_site_ip = $1
+     WHERE id = (
+       SELECT id FROM subscriptions
+       WHERE user_id = $2 AND status = 'active'
+       ORDER BY expires_at DESC
+       LIMIT 1
+     )`,
+    [ip, userId]
+  ).catch(() => {});
+}
+
+module.exports = { pool, initDB, logAccess };

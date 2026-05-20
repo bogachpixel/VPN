@@ -1,5 +1,98 @@
 # TouchVPN - Project Documentation
 
+---
+
+## MVP VPN Architecture Lock v1 — vpn.touchme.tech
+
+> **ВАЖНО:** Этот документ фиксирует согласованную архитектуру. Выполнение команд, установка, перенос DNS, запуск certbot, изменение Marzban, nginx, xray_config.json, .env и firewall — только после отдельного разрешения.
+
+### Порты (финальная схема)
+
+| Порт | Сервис | Биндинг | Доступ | Назначение |
+|------|--------|---------|--------|------------|
+| **22** | SSH | 0.0.0.0 | публичный | управление |
+| **80** | nginx (HTTP→HTTPS, certbot) | 0.0.0.0 | публичный | редирект на HTTPS, ACME |
+| **443** | nginx | 0.0.0.0 | публичный | **только сайт + `/sub/` proxy к Marzban** |
+| **3000** | Node.js (сайт) | **127.0.0.1** | только локально | backend сайта |
+| **8000** | Marzban panel/API | 0.0.0.0 | публичный (позже закрыть) | админка + API |
+| **8443** | Xray VLESS inbound | 0.0.0.0 | публичный | **VPN inbound** |
+
+**Правило:** Xray/VPN НЕ использует 443 в MVP. Только 8443.
+**Правило:** 443 принадлежит исключительно nginx (сайт + `/sub/`).
+
+### Ключевые переменные
+
+**Backend сайта (`.env`):**
+```
+PORT=3000
+MARZBAN_URL=http://127.0.0.1:8000
+SITE_URL=https://vpn.touchme.tech
+```
+
+**Marzban (`/opt/Marzban/.env`):**
+```
+UVICORN_HOST=0.0.0.0
+UVICORN_PORT=8000
+XRAY_SUBSCRIPTION_URL_PREFIX=https://vpn.touchme.tech
+```
+
+### Cloudflare
+- `vpn.touchme.tech` → A-запись → NEW_IP
+- **Proxy status: DNS only (gray cloud)** — обязательно
+- Orange cloud / proxied — запрещено в MVP
+
+### TLS / SSL правило
+
+> Если используется VLESS REALITY на 8443 — не нужен SSL-сертификат для самого VPN inbound. Certbot/SSL нужен для сайта и subscription через nginx. Если используется VLESS TLS, отдельно описать, какие сертификаты использует Xray, иначе TLS не настраивать.
+
+### Порядок развёртывания (строго по этапам)
+
+1. Новый droplet Ubuntu 24.04 + базовая настройка (ufw)
+2. Marzban официальный quick install на стандартный порт 8000
+3. Проверка panel: `http://NEW_IP:8000/dashboard/`
+4. Создание тестового пользователя VLESS на 8443
+5. Проверка QR (см. критерии этапа A)
+6. Проверка VPN на iOS/Android
+7. **Только после рабочего VPN** — сайт на 3000 + nginx на 80/443
+8. Certbot для SSL на vpn.touchme.tech
+9. FreeKassa webhook
+10. Дизайн — последним, после полной проверки
+
+### Критерии готовности
+
+**Этап A — до сайта / nginx / certbot:**
+- [ ] Marzban panel открывается по `http://NEW_IP:8000/dashboard/`
+- [ ] Тестовый пользователь создаётся в Marzban
+- [ ] QR содержит реальный UUID (не `00000000-0000-0000-0000-000000000000`)
+- [ ] В QR: `host=vpn.touchme.tech`, `port=8443`
+- [ ] В QR нет: `localhost`, `127.0.0.1`, `8001`, `8000`
+- [ ] VPN подключается на iOS / Android
+
+**Этап B — после сайта / nginx / certbot:**
+- [ ] Сайт открывается по `https://vpn.touchme.tech`
+- [ ] Subscription URL работает: `https://vpn.touchme.tech/sub/...`
+- [ ] Backend сайта ходит в Marzban по `http://127.0.0.1:8000`
+- [ ] FreeKassa webhook работает
+
+### Категорически НЕ делать
+- Не менять `xray_config.json` руками до проверки
+- Не ставить nginx на 8000
+- Не ставить Xray/VPN на 443
+- Не включать Cloudflare orange cloud
+- Не трогать дизайн до рабочего VPN
+- Не удалять старый droplet
+
+### История поломки старого droplet (для памяти)
+1. nginx занял порт 8000
+2. Marzban был перенесён с 8000 на 8001
+3. был изменён `MARZBAN_URL` несколько раз
+4. вручную редактировался `xray_config.json`
+5. менялись протоколы VLESS / VMess / Shadowsocks
+6. создавались самоподписанные SSL для Marzban
+7. в коде сайта срабатывал fallback с UUID `00000000-0000-0000-0000-000000000000`
+
+---
+
 ## Project Overview
 VPN service with country code selector, Freekassa payment integration, and Marzban backend for VPN management.
 

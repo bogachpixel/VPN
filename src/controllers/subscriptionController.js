@@ -1,4 +1,4 @@
-const { pool } = require('../models/db');
+const { pool, logAccess } = require('../models/db');
 const QRCode = require('qrcode');
 const { createMarzbanUser } = require('../services/marzbanService');
 
@@ -17,6 +17,7 @@ function injectVpnName(link, vpnName) {
 async function getActiveSubscription(req, res) {
   try {
     const userId = req.userId;
+    logAccess(userId, req, 'dashboard');
 
     const result = await pool.query(
       `SELECT s.*, u.vpn_name
@@ -117,6 +118,7 @@ async function testActivate(req, res) {
       [userId, now, expireDate, marzbanUsername, marzbanLink]
     );
 
+    logAccess(userId, req, 'test_activate');
     return res.json({ success: true });
   } catch (err) {
     console.error('TestActivate error:', err);

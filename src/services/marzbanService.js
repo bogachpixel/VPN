@@ -69,4 +69,21 @@ async function updateMarzbanUser(username, expireTimestamp) {
   return response.data;
 }
 
-module.exports = { createMarzbanUser, getMarzbanUser, updateMarzbanUser };
+async function deleteMarzbanUser(username) {
+  const token = await getMarzbanToken();
+  await axios.delete(`${MARZBAN_URL}/api/user/${username}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+async function disableMarzbanUser(username) {
+  const token = await getMarzbanToken();
+  const response = await axios.put(
+    `${MARZBAN_URL}/api/user/${username}`,
+    { status: 'disabled' },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+}
+
+module.exports = { createMarzbanUser, getMarzbanUser, updateMarzbanUser, deleteMarzbanUser, disableMarzbanUser };

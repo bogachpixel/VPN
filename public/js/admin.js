@@ -98,6 +98,12 @@ async function loadUsers(page, search) {
       const paid = u.total_paid > 0 ? `<span class="badge badge-paid">${parseFloat(u.total_paid).toLocaleString('ru-RU')} ₽</span>` : '—';
       const regDate = new Date(u.created_at).toLocaleDateString('ru-RU');
 
+      const lastIp = u.last_site_ip || '—';
+      const qrVer = u.qr_version != null ? `v${u.qr_version}` : '—';
+      const suspFlag = u.suspected_sharing
+        ? `<span style="color:#e5a020;" title="Подозрение на шаринг">⚠</span>`
+        : '<span style="color:var(--text-secondary);">—</span>';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="color:var(--text-secondary);">${u.id}</td>
@@ -105,6 +111,9 @@ async function loadUsers(page, search) {
         <td>${vpnName}</td>
         <td>${badge}</td>
         <td style="color:var(--text-secondary); font-size:0.78rem;">${isActive ? expiresStr : '—'}</td>
+        <td style="color:var(--text-secondary); font-size:0.75rem; font-family:monospace;">${escHtml(lastIp)}</td>
+        <td style="color:var(--text-secondary); font-size:0.75rem;">${qrVer}</td>
+        <td>${suspFlag}</td>
         <td>${paid}</td>
         <td style="color:var(--text-secondary); font-size:0.78rem;">${regDate}</td>
         <td>
@@ -167,14 +176,26 @@ async function openUserDetail(userId) {
 
     const subsHtml = data.subscriptions.map(s => {
       const active = s.status === 'active' && new Date(s.expires_at) > new Date();
+      const qrV = s.qr_version != null ? `v${s.qr_version}` : '—';
+      const sIp = escHtml(s.last_site_ip || '—');
+      const susp = s.suspected_sharing ? '⚠' : '—';
       return `<tr>
         <td>${s.id}</td>
         <td>${s.plan_days} дн.</td>
         <td>${s.status}</td>
         <td style="font-size:0.76rem;">${s.expires_at ? new Date(s.expires_at).toLocaleString('ru-RU') : '—'}</td>
-        ${active ? `<td><button class="btn btn-danger" style="padding:3px 8px;min-height:26px;font-size:0.73rem;" onclick="blockSub(${u.id})">Отключить</button></td>` : '<td>—</td>'}
+        <td style="font-family:monospace;font-size:0.74rem;">${sIp}</td>
+        <td>${qrV}</td><td>${susp}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${active ? `
+            <button class="btn btn-danger" style="padding:3px 8px;min-height:26px;font-size:0.71rem;" onclick="blockSub(${u.id})">Блок</button>
+            <button class="btn btn-outline" style="padding:3px 8px;min-height:26px;font-size:0.71rem;" onclick="doDisableVpn(${u.id})">Откл. VPN</button>
+            <button class="btn btn-ghost" style="padding:3px 8px;min-height:26px;font-size:0.71rem;" onclick="doReissueQr(${u.id})">↻ QR</button>
+            <button class="btn btn-danger" style="padding:3px 8px;min-height:26px;font-size:0.71rem;" onclick="doDeleteVpn(${u.id})">✕ VPN</button>
+          ` : '—'}
+        </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="5" style="color:var(--text-secondary);">Нет подписок</td></tr>';
+    }).join('') || '<tr><td colspan="8" style="color:var(--text-secondary);">Нет подписок</td></tr>';
 
     const paymentsHtml = data.payments.map(p => `<tr>
       <td>${p.id}</td>
@@ -200,9 +221,12 @@ async function openUserDetail(userId) {
         <div class="modal-section-title">Подписки</div>
         <div style="overflow-x:auto;">
           <table class="data-table">
-            <thead><tr><th>#</th><th>Тариф</th><th>Статус</th><th>Истекает</th><th></th></tr></thead>
+            <thead><tr><th>#</th><th>Тариф</th><th>Статус</th><th>Истекает</th><th>Last IP</th><th>QR</th><th>⚠</th><th>Действия</th></tr></thead>
             <tbody>${subsHtml}</tbody>
           </table>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-outline" style="font-size:0.75rem;min-height:28px;padding:4px 12px;" onclick="viewIpLogs(${u.id})">📋 Логи IP</button>
         </div>
       </div>
 
@@ -222,15 +246,69 @@ async function openUserDetail(userId) {
 }
 
 async function blockSub(userId) {
-  if (!confirm('Отключить все активные подписки этого пользователя?')) return;
+  if (!confirm('Заблокировать все активные подписки?')) return;
   try {
     await adminRequest('POST', `/admin/users/${userId}/block`);
-    alert('Подписки отключены');
+    alert('Подписки заблокированы');
     openUserDetail(userId);
     loadUsers(currentPage, currentSearch);
-  } catch (err) {
-    alert('Ошибка: ' + err.message);
-  }
+  } catch (err) { alert('Ошибка: ' + err.message); }
+}
+
+async function doReissueQr(userId) {
+  if (!confirm('Перевыпустить QR? Старый QR перестанет работать немедленно.')) return;
+  try {
+    const data = await adminRequest('POST', `/admin/users/${userId}/reissue-qr`);
+    alert(`QR перевыпущен. Новая версия: v${data.newVersion}`);
+    openUserDetail(userId);
+    loadUsers(currentPage, currentSearch);
+  } catch (err) { alert('Ошибка: ' + err.message); }
+}
+
+async function doDisableVpn(userId) {
+  if (!confirm('Отключить VPN-доступ в Marzban (без удаления подписки)?')) return;
+  try {
+    await adminRequest('POST', `/admin/users/${userId}/disable-vpn`);
+    alert('VPN отключён в Marzban');
+    openUserDetail(userId);
+  } catch (err) { alert('Ошибка: ' + err.message); }
+}
+
+async function doDeleteVpn(userId) {
+  if (!confirm('УДАЛИТЬ VPN-доступ? Пользователь потеряет доступ. Подписка будет отменена.')) return;
+  if (!confirm('Вы уверены? Это действие необратимо.')) return;
+  try {
+    await adminRequest('POST', `/admin/users/${userId}/delete-vpn`);
+    alert('VPN-доступ удалён');
+    openUserDetail(userId);
+    loadUsers(currentPage, currentSearch);
+  } catch (err) { alert('Ошибка: ' + err.message); }
+}
+
+async function viewIpLogs(userId) {
+  try {
+    const data = await adminRequest('GET', `/admin/users/${userId}/ip-logs`);
+    const rows = data.logs.length
+      ? data.logs.map(l => `<tr>
+          <td style="font-family:monospace;font-size:0.75rem;">${escHtml(l.ip_address || '—')}</td>
+          <td style="font-size:0.72rem;color:var(--text-secondary);">${escHtml(l.action)}</td>
+          <td style="font-size:0.72rem;color:var(--text-secondary);">${new Date(l.created_at).toLocaleString('ru-RU')}</td>
+          <td style="font-size:0.68rem;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(l.user_agent)}">${escHtml((l.user_agent||'').substring(0,60))}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" style="color:var(--text-secondary);">Логов нет</td></tr>';
+
+    const logsEl = document.getElementById('ipLogsContent');
+    if (logsEl) {
+      logsEl.innerHTML = `<table class="data-table"><thead><tr><th>IP</th><th>Действие</th><th>Время</th><th>UA</th></tr></thead><tbody>${rows}</tbody></table>`;
+      logsEl.style.display = 'block';
+    } else {
+      const section = document.createElement('div');
+      section.className = 'modal-section';
+      section.id = 'ipLogsContent';
+      section.innerHTML = `<div class="modal-section-title">Логи IP</div><table class="data-table"><thead><tr><th>IP</th><th>Действие</th><th>Время</th><th>UA</th></tr></thead><tbody>${rows}</tbody></table>`;
+      document.getElementById('modalContent').appendChild(section);
+    }
+  } catch (err) { alert('Ошибка загрузки логов: ' + err.message); }
 }
 
 document.getElementById('modalCloseBtn').addEventListener('click', () => {

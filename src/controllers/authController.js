@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../models/db');
+const { pool, logAccess } = require('../models/db');
 
 async function register(req, res) {
   try {
@@ -33,6 +33,7 @@ async function register(req, res) {
     const userId = result.rows[0].id;
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
+    logAccess(userId, req, 'register');
     return res.json({ token, userId });
   } catch (err) {
     console.error('Register error:', err);
@@ -68,6 +69,7 @@ async function login(req, res) {
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
+    logAccess(user.id, req, 'login');
     return res.json({ token, userId: user.id });
   } catch (err) {
     console.error('Login error:', err);
