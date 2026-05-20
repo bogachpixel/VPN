@@ -206,6 +206,23 @@
   </div>
 </div>
 
+<!-- CUSTOM CONFIRM MODAL -->
+<div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(4,6,2,0.88); backdrop-filter:blur(5px); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--bg-card); border:1px solid rgba(200,150,46,0.4); border-radius:var(--radius); padding:28px 26px; max-width:420px; width:100%; box-shadow:0 0 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(200,150,46,0.08), inset 0 1px 0 rgba(200,150,46,0.06); position:relative;">
+    <div style="position:absolute;top:0;left:0;width:16px;height:16px;border-top:1.5px solid rgba(200,150,46,0.5);border-left:1.5px solid rgba(200,150,46,0.5);border-radius:3px 0 0 0;"></div>
+    <div style="position:absolute;bottom:0;right:0;width:16px;height:16px;border-bottom:1.5px solid rgba(200,150,46,0.5);border-right:1.5px solid rgba(200,150,46,0.5);border-radius:0 0 3px 0;"></div>
+    <div id="confirmTitle" style="font-family:'Share Tech Mono',monospace; font-size:0.72rem; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:2px; margin-bottom:14px;">ПОДТВЕРЖДЕНИЕ</div>
+    <div id="confirmMessage" style="color:var(--text); font-size:0.9rem; line-height:1.6; margin-bottom:24px;"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button id="confirmCancelBtn" class="btn btn-outline" style="min-width:90px;">Отмена</button>
+      <button id="confirmOkBtn" class="btn btn-primary" style="min-width:110px;">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer" style="position:fixed; top:72px; right:20px; z-index:99998; display:flex; flex-direction:column; gap:8px; pointer-events:none; min-width:280px;"></div>
+
 <script src="/js/api.js"></script>
 <script src="/js/admin.js"></script>
 </body>

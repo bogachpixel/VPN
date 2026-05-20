@@ -246,43 +246,43 @@ async function openUserDetail(userId) {
 }
 
 async function blockSub(userId) {
-  if (!confirm('Заблокировать все активные подписки?')) return;
+  if (!await customConfirm('Заблокировать все активные подписки пользователя?', 'БЛОКИРОВКА', 'Заблокировать', true)) return;
   try {
     await adminRequest('POST', `/admin/users/${userId}/block`);
-    alert('Подписки заблокированы');
+    showToast('Подписки заблокированы', 'success');
     openUserDetail(userId);
     loadUsers(currentPage, currentSearch);
-  } catch (err) { alert('Ошибка: ' + err.message); }
+  } catch (err) { showToast('Ошибка: ' + err.message, 'error'); }
 }
 
 async function doReissueQr(userId) {
-  if (!confirm('Перевыпустить QR? Старый QR перестанет работать немедленно.')) return;
+  if (!await customConfirm('Перевыпустить QR? Старый QR перестанет работать немедленно.', 'ПЕРЕВЫПУСК QR', 'Перевыпустить', false)) return;
   try {
     const data = await adminRequest('POST', `/admin/users/${userId}/reissue-qr`);
-    alert(`QR перевыпущен. Новая версия: v${data.newVersion}`);
+    showToast(`QR перевыпущен — теперь версия v${data.newVersion}`, 'success');
     openUserDetail(userId);
     loadUsers(currentPage, currentSearch);
-  } catch (err) { alert('Ошибка: ' + err.message); }
+  } catch (err) { showToast('Ошибка: ' + err.message, 'error'); }
 }
 
 async function doDisableVpn(userId) {
-  if (!confirm('Отключить VPN-доступ в Marzban (без удаления подписки)?')) return;
+  if (!await customConfirm('Отключить VPN-доступ в Marzban без удаления подписки?', 'ОТКЛЮЧИТЬ VPN', 'Отключить', true)) return;
   try {
     await adminRequest('POST', `/admin/users/${userId}/disable-vpn`);
-    alert('VPN отключён в Marzban');
+    showToast('VPN отключён в Marzban', 'info');
     openUserDetail(userId);
-  } catch (err) { alert('Ошибка: ' + err.message); }
+  } catch (err) { showToast('Ошибка: ' + err.message, 'error'); }
 }
 
 async function doDeleteVpn(userId) {
-  if (!confirm('УДАЛИТЬ VPN-доступ? Пользователь потеряет доступ. Подписка будет отменена.')) return;
-  if (!confirm('Вы уверены? Это действие необратимо.')) return;
+  if (!await customConfirm('Удалить VPN-доступ? Пользователь потеряет соединение, подписка будет отменена.', 'УДАЛЕНИЕ VPN-ДОСТУПА', 'Удалить', true)) return;
+  if (!await customConfirm('Действие необратимо. Подтвердите удаление ещё раз.', 'ФИНАЛЬНОЕ ПОДТВЕРЖДЕНИЕ', 'Да, удалить', true)) return;
   try {
     await adminRequest('POST', `/admin/users/${userId}/delete-vpn`);
-    alert('VPN-доступ удалён');
+    showToast('VPN-доступ удалён', 'success');
     openUserDetail(userId);
     loadUsers(currentPage, currentSearch);
-  } catch (err) { alert('Ошибка: ' + err.message); }
+  } catch (err) { showToast('Ошибка: ' + err.message, 'error'); }
 }
 
 async function viewIpLogs(userId) {
@@ -308,7 +308,7 @@ async function viewIpLogs(userId) {
       section.innerHTML = `<div class="modal-section-title">Логи IP</div><table class="data-table"><thead><tr><th>IP</th><th>Действие</th><th>Время</th><th>UA</th></tr></thead><tbody>${rows}</tbody></table>`;
       document.getElementById('modalContent').appendChild(section);
     }
-  } catch (err) { alert('Ошибка загрузки логов: ' + err.message); }
+  } catch (err) { showToast('Ошибка загрузки логов: ' + err.message, 'error'); }
 }
 
 document.getElementById('modalCloseBtn').addEventListener('click', () => {
@@ -319,6 +319,57 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
     document.getElementById('detailModal').classList.remove('open');
   }
 });
+
+/* ---- CUSTOM DIALOGS ---- */
+function customConfirm(message, title = 'ПОДТВЕРЖДЕНИЕ', okLabel = 'Подтвердить', danger = false) {
+  return new Promise(resolve => {
+    const modal = document.getElementById('confirmModal');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    okBtn.textContent = okLabel;
+    okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+    modal.style.display = 'flex';
+
+    function cleanup(result) {
+      modal.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      modal.removeEventListener('click', onBackdrop);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onBackdrop(e) { if (e.target === modal) cleanup(false); }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    modal.addEventListener('click', onBackdrop);
+  });
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const styles = {
+    success: { bg: 'rgba(0,160,90,0.13)',   border: 'rgba(0,200,100,0.4)', color: '#5dda8a', icon: '✓' },
+    error:   { bg: 'rgba(200,50,50,0.13)',   border: 'rgba(220,80,80,0.4)', color: '#ff7070', icon: '✕' },
+    info:    { bg: 'rgba(200,150,46,0.10)',  border: 'rgba(200,150,46,0.4)', color: 'var(--amber)', icon: '◈' }
+  };
+  const s = styles[type] || styles.info;
+  const toast = document.createElement('div');
+  toast.style.cssText = `background:${s.bg}; border:1px solid ${s.border}; border-left:3px solid ${s.border}; border-radius:3px; padding:11px 16px; font-size:0.82rem; color:${s.color}; pointer-events:auto; max-width:320px; box-shadow:0 4px 24px rgba(0,0,0,0.55); font-family:'Share Tech Mono',monospace; letter-spacing:0.4px; opacity:0; transform:translateX(16px); transition:opacity 0.2s ease, transform 0.2s ease; cursor:pointer; display:flex; align-items:center; gap:9px;`;
+  toast.innerHTML = `<span style="flex-shrink:0;font-size:0.9rem;">${s.icon}</span><span>${escHtml(message)}</span>`;
+  toast.addEventListener('click', () => removeToast(toast));
+  container.appendChild(toast);
+  requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; });
+  setTimeout(() => removeToast(toast), 4000);
+}
+
+function removeToast(toast) {
+  toast.style.opacity = '0';
+  toast.style.transform = 'translateX(16px)';
+  setTimeout(() => toast.remove(), 200);
+}
 
 /* ---- HELPERS ---- */
 async function adminRequest(method, path) {
